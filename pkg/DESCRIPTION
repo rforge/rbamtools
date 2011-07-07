@@ -1,0 +1,11 @@
+Package: rbamtools
+Type: Package
+Title: Reading and writing BAM file format.
+Version: 1.0
+Date: 2011-07-05
+Author: W.Kaisers
+Maintainer: W.Kaisers <kaisers@med.uni-duesseldorf.de>
+Description: BAM files are standard output files of gene sequence alignment programs. The R-package rbamtools allows reading and examination of file content and writing of BAM files. 
+License: GPL
+LazyLoad: yes
+Depends: methods
