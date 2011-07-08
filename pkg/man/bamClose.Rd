@@ -2,7 +2,7 @@
 \alias{bamClose}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-bamClose: Generic function for closing file connection for bamReader and bamWriter
+bamClose (bamReader, bamWriter)
 }
 \description{
 Closes BAM file for bamReader and bamWriter objects.
@@ -16,7 +16,7 @@ bamClose(object)
 An instance of class bamReader or bamWriter.
 }
 }
-\references{ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+\references{ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers

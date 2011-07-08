@@ -14,4 +14,4 @@ Writes FirstMate attribute for bamAlignment object.
 }
 }}
 \keyword{methods}
-\keyword{FirstMate}
+\keyword{FirstMate<-}

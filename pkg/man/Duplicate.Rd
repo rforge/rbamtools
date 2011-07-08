@@ -19,10 +19,10 @@ An instance of class bamAlignment
 }
 }
 \value{
-bool
+Bool.
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers

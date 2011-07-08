@@ -8,7 +8,6 @@ Reading accessor for FailedQC attribute of bamAlignment object.
 }
 \section{Methods}{
 \describe{
-
 \item{\code{signature(object = "bamAlignment")}}{
 %%  ~~describe this method here~~
 }

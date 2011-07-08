@@ -2,10 +2,10 @@
 \alias{CreateIndex}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-CreateIndex: Creates Index file ("filename.bam.bai") for opened BAM file.
+CreateIndex (bamReader)
 }
 \description{
-Creates index file and returns TRUE on success.
+Creates index file ("filename.bam.bai") and returns TRUE on success.
 }
 \usage{
 CreateIndex(object)
@@ -18,15 +18,14 @@ An open instance of bamReader class. When bamReader is not open, an error occurs
 }
 }
 \value{
-bool.
+Bool.
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers
 }
-
 \examples{
 # CreateIndex example
 library(rbamtools)
@@ -38,5 +37,4 @@ bamClose(r)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ CreateIndex }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{CreateIndex}

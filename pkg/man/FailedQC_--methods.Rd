@@ -13,4 +13,4 @@ Writing accessor for FailedQC attribute of bamAlignment object
 }
 }}
 \keyword{methods}
-\keyword{FailedQC}
+\keyword{FailedQC<-}

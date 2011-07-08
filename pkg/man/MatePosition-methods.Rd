@@ -1,10 +1,10 @@
-\name{MatePosition-methods}
+\name{MateMapped<--methods}
 \docType{methods}
-\alias{MatePosition-methods}
-\title{MatePosition (bamAlignment)}
+\alias{MateMapped<--methods}
+\title{MateMapped (bamAlignment}
 \description{
- ~~ Methods for function \code{MatePosition}  ~~
-Returns alignment position for mate pair read.
+ ~~ Methods for function \code{MateMapped<-}  ~~
+Writing accessor for MateMapped attribute.
 }
 \section{Methods}{
 \describe{
@@ -14,4 +14,4 @@ Returns alignment position for mate pair read.
 }
 }}
 \keyword{methods}
-\keyword{MatePosition}
+\keyword{MateMapped<-}

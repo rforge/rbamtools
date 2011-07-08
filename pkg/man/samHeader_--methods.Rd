@@ -1,7 +1,7 @@
 \name{samHeader<--methods}
 \docType{methods}
 \alias{samHeader<--methods}
-\title{samHeader_-methods}
+\title{samHeader<-}
 \description{
  ~~ Methods for function \code{samHeader<-}  ~~
 samHeader_-methods
@@ -14,4 +14,4 @@ samHeader_-methods
 }
 }}
 \keyword{methods}
-\keyword{ ~~ other possible keyword(s) ~~ }
+\keyword{samHeader<-}

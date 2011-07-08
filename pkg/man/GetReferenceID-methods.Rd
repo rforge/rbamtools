@@ -14,4 +14,4 @@ Returns refID for given Reference Name.
 }
 }}
 \keyword{methods}
-\keyword{ ~~ other possible keyword(s) ~~ }
+\keyword{GetReferenceID}

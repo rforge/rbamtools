@@ -16,15 +16,15 @@ filename(object)
 \arguments{
   \item{object}{
 %%     ~~Describe \code{object} here~~
-An instance of class bamReader or bamWriter
+An instance of class bamReader or bamWriter.
 }
 }
 
 \value{
-string containing current filename of bamReader object (for reading attribute access).
+String containing current filename of bamReader object (for reading attribute access).
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers

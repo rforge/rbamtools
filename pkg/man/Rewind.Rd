@@ -33,14 +33,6 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 %%  ~~who you are~~
 W.Kaisers
 }
-\note{
-%%  ~~further notes~~
-Rewind
-}
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-Rewind
-}
 \examples{
 # Rewind(bamReader)
 library(rbamtools)
@@ -55,4 +47,3 @@ bamClose(r)
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{Rewind}
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

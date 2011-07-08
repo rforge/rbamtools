@@ -3,10 +3,11 @@
 \alias{rbamtools}
 \docType{package}
 \title{
-rbamtools: Reading and writing BAM file format
+Reading and writing BAM files
 }
 \description{
-BAM files are standard output format for many gene sequence alignment programs. rbamtools allows reading, content examination and writing of BAM files.
+More about what it does (maybe more than one line)
+~~ A concise (1-5 lines) description of the package ~~
 }
 \details{
 \tabular{ll}{
@@ -22,8 +23,9 @@ Depends: \tab methods\cr
 ~~ functions ~~
 }
 \author{
-Wolfgang Kaisers, Zentralbereich Bioinformatik, BMFZ Universität Düsseldorf (www.bmfz.de).
-Maintainer: Wolfgang Kaisers <kaisers@med.uni-duesseldorf.de>
+W.Kaisers
+Maintainer: W.Kaisers <kaisers@med.uni-duesseldorf.de>
+~~ The author and/or maintainer of the package ~~
 }
 \references{
 ~~ Literature or other references for background information ~~
@@ -44,13 +46,10 @@ bamOpen(r)
 # bamAlignment
 al<-GetNextAlignment(r)
 name(al)
-posiiton(al)
 CigarData(al)
 Qualities(al)
 QueryBases(al)
 AlignedBases(al)
-getNext(al)
-name(al)
 #############################
 # bamWriter
 w<-bamWriter("test.bam",GetReferenceData(r),samHeader(r))

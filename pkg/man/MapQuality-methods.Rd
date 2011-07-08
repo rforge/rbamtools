@@ -14,4 +14,4 @@ Returns MapQuality for bamAlignment.
 }
 }}
 \keyword{methods}
-\keyword{ ~~ other possible keyword(s) ~~ }
+\keyword{MapQuality}

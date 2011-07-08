@@ -19,10 +19,10 @@ An instance of class bamAlignment
 A successful call of GetNextAlignment returns a valid bamAlignment object. Calling GetNextAlignment when read position in BAM file is past the last record retrieves an invalid bamAlignment object.
 }
 \value{
-bool
+Bool.
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers

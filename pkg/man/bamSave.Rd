@@ -2,7 +2,7 @@
 \alias{bamSave}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-bamSave Generic: Saves bamAlignment Object to BAM file
+bamSave (bamWriter)
 }
 \description{
 Saves bamAlignment to BAM file.
@@ -18,7 +18,7 @@ An opened instance of class bamWriter
 }
   \item{\dots}{
 %%     ~~Describe \code{\dots} here~~
-A valid instance of class bamAlignment
+An instance of class bamAlignment
 }
 }
 \value{

@@ -30,7 +30,7 @@ Creates an instance of class bamReader and returns it.
 An instance of class bamReader. Before reading alignments, there must be a call to "bamOpen".
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 %%  ~~who you are~~

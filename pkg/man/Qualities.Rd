@@ -15,7 +15,7 @@ Qualities(object)
 \arguments{
   \item{object}{
 %%     ~~Describe \code{object} here~~
-An instance of class bamAlignment
+An instance of class bamAlignment.
 }
 }
 \details{
@@ -37,10 +37,6 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 \author{
 %%  ~~who you are~~
 W.Kaisers
-}
-\note{
-%%  ~~further notes~~
-Qualities
 }
 \seealso{
 %% ~~objects to See Also as \code{\link{help}}, ~~~

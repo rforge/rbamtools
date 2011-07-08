@@ -35,10 +35,6 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 %%  ~~who you are~~
 W.Kaisers
 }
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-SecondMate
-}
 \examples{
 # SecondMate(bamAlignment)
 library(rbamtools)

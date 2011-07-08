@@ -15,7 +15,7 @@ MatePosition(object)
 \arguments{
   \item{object}{
 %%     ~~Describe \code{object} here~~
-An instance of class bamAlignment
+An instance of class bamAlignment.
 }
 }
 \details{
@@ -32,7 +32,7 @@ Integer.
 }
 \references{
 %% ~put references to the literature/web site here ~
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 %%  ~~who you are~~

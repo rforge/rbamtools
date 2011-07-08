@@ -14,4 +14,4 @@ Writing accessor for SecondMate attribute of bamAlignment
 }
 }}
 \keyword{methods}
-\keyword{SecondMate}
+\keyword{SecondMate<-}

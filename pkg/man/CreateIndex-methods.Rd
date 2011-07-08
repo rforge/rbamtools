@@ -14,4 +14,4 @@ CreateIndex method.
 }
 }}
 \keyword{methods}
-\keyword{ ~~ other possible keyword(s) ~~ }
+\keyword{CreateIndex}

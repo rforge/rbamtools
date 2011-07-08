@@ -42,18 +42,10 @@ Objects can be created by calls of the form \code{new("bamWriter", filename, ref
 	 }
 }
 \references{
-BamAux.h 2009 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers
-}
-\note{
-note
-}
-\seealso{
-seealso
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
 }
 \examples{
 showClass("bamWriter")

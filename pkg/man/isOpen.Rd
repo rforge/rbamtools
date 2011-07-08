@@ -2,7 +2,7 @@
 \alias{isOpen}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-StandardGeneric isOpen: Returns file-open status for bamReader and bamWriter objects.
+isOpen (bamReader, bamWriter)
 }
 \description{
 Returns file-open status for bamReader and bamWriter objects.
@@ -18,13 +18,13 @@ An instance of bamReader or bamWriter class
 }
 }
 \details{
-Opens BAM file
+Opens BAM file.
 }
 \value{
-bool.
+Bool.
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers

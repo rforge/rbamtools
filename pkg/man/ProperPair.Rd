@@ -15,7 +15,7 @@ ProperPair(object)
 \arguments{
   \item{object}{
 %%     ~~Describe \code{object} here~~
-An instance of class bamAlignment
+An instance of class bamAlignment.
 }
 }
 \details{

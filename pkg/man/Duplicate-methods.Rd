@@ -14,4 +14,4 @@ Reading accessor for Duplicate attribute.
 }
 }}
 \keyword{methods}
-\keyword{ ~~ other possible keyword(s) ~~ }
+\keyword{Duplicate}

@@ -19,4 +19,4 @@ Reads filename from bamWriter object.
 }
 }}
 \keyword{methods}
-\keyword{filename}
+\keyword{filename<-}

@@ -51,14 +51,6 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 \author{
 W.Kaisers
 }
-\note{
-note
-}
-\seealso{
-seealso
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
 showClass("bamReader")
 }

@@ -1,41 +1,57 @@
-\name{getNext}
-\alias{getNext}
+\name{GetNextAlignment}
+\alias{GetNextAlignment}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-getNext (bamAlignment)
+GetNextAlignment (bamReader)
 }
 \description{
-Fills next alignment from BAM file into bamAlignment object without creating a new instance.
+%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Retrieves next Alignment from BAM file.
 }
 \usage{
-getNext(.Object)
+GetNextAlignment(object)
 }
+%- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{.Object}{
-An instance of class bamAlignment
+  \item{object}{
+%%     ~~Describe \code{object} here~~
+A valid instance of class bamReader
 }
+}
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+GetnextAlignment
 }
 \value{
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
 None.
 }
+\references{
+%% ~put references to the literature/web site here ~
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
+}
 \author{
+%%  ~~who you are~~
 W.Kaisers
 }
-\seealso{
+\note{
+%%  ~~further notes~~
 GetNextAlignment
 }
 \examples{
-# BamAlignemnt.AlignedBases example
+# GetNextAlignment
 library(rbamtools)
 bam_file <- system.file("extdata", "accepted_hits.bam", package="rbamtools")
 r<-bamReader(bam_file)
 bamOpen(r)
 al<-GetNextAlignment(r)
-name(al)
-getNext(al)
-name(al)
 bamClose(r)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{getNext}
+\keyword{GetNextAlignment}
+\keyword{bamReader}% __ONLY ONE__ keyword per line

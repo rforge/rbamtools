@@ -18,10 +18,10 @@ An instance of class bamAlignment
 }
 }
 \value{
-data.frame with four columns: RefID, RefName, RefLength, RefHasAlignments
+data.frame with four columns: RefID, RefName, RefLength, RefHasAlignments.
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers

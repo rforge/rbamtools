@@ -2,10 +2,10 @@
 \alias{AlignedBases}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-AlignedBases (bamAlignment): Returns aligned Sequence
+AlignedBases (bamAlignment)
 }
 \description{
-Returns Sequence of aligned Bases
+Returns Sequence of aligned bases.
 }
 \usage{
 AlignedBases(object)
@@ -22,13 +22,10 @@ Returned Sequence contains 'N' characters for gapped aligns.
 Character string
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers
-}
-\note{
-note
 }
 \seealso{
 QueryBases

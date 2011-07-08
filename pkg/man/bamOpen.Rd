@@ -2,10 +2,10 @@
 \alias{bamOpen}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-StandardGeneric bamOpen: Opens file connections for bamReader and bamWriter
+bamOpen (bamReader, bamWriter)
 }
 \description{
-Opens BAM file for bamReader and bamWriter
+Generic function for bamReader and bamWriter for opening BAM file.
 }
 \usage{
 bamOpen(object, ...)
@@ -21,14 +21,11 @@ An instance of bamReader or bamWriter class
 Optional name of BAM Index file for bamReader.
 }
 }
-\details{
-Opens BAM file
-}
 \value{
 None.
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers

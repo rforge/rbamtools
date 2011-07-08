@@ -22,10 +22,10 @@ An instance of class bamAlignment
 Function can be used to read and write FirstMate status.
 }
 \value{
-bool
+Bool.
 }
 \references{
-Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009)
+Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 W.Kaisers
