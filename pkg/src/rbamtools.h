@@ -1,8 +1,5 @@
 /*
  * rbamtools.h
- *
- *  Created on: 17.06.2011
- *      Author: wolfgang
  */
 
 #include <R.h>

@@ -1,5 +1,5 @@
 # #####################################################################################################################
-# Generics definitions for bamReader and bamWriter
+# Generic definitions for bamReader and bamWriter
 setGeneric("filename", function(object) standardGeneric("filename"))
 setGeneric("filename<-", function(object,value) standardGeneric("filename<-"))
 setGeneric("bamOpen", function(object,...) standardGeneric("bamOpen"))
