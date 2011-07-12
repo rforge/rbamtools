@@ -6,29 +6,25 @@
 Reading and writing BAM files
 }
 \description{
-More about what it does (maybe more than one line)
-~~ A concise (1-5 lines) description of the package ~~
+The package contains functions for accessing contents of BAM (BGZF compressed SAM=Sequence Alignment/Map format) files.
 }
 \details{
 \tabular{ll}{
 Package: \tab rbamtools\cr
 Type: \tab Package\cr
 Version: \tab 1.0\cr
-Date: \tab 2011-06-24\cr
+Date: \tab 2011-06-20\cr
 License: \tab GPL \cr
 LazyLoad: \tab yes\cr
 Depends: \tab methods\cr
 }
-~~ An overview of how to use the package, including the most important ~~
-~~ functions ~~
+Opening BAM files with bamReader objects. Sequential reading file content into bamAlignment objects. Accessing alignment content via accessor functions. Writing BAM files with bamWriter objects.
 }
 \author{
 W.Kaisers
 Maintainer: W.Kaisers <kaisers@med.uni-duesseldorf.de>
-~~ The author and/or maintainer of the package ~~
 }
 \references{
-~~ Literature or other references for background information ~~
 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \keyword{ package }

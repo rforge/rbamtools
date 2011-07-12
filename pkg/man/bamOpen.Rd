@@ -31,7 +31,7 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 W.Kaisers
 }
 \seealso{
-bamOpen
+bamClose
 }
 \examples{
 # bamOpen example

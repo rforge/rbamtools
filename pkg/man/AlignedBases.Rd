@@ -12,7 +12,7 @@ AlignedBases(object)
 }
 \arguments{
   \item{object}{
-An instance of class bamAlignment
+\tAn instance of class bamAlignment
 }
 }
 \details{

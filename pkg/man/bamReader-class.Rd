@@ -24,21 +24,21 @@ Objects can be created by calls of the form \code{new("bamReader", filename)}.
 }
 \section{Slots}{
   \describe{
-    \item{\code{filename}:}{Object of class \code{"character"} ~~ }
-    \item{\code{reader}:}{Object of class \code{"externalptr"} ~~ }
+    \item{\code{filename}:}{Object of class \code{"character"}:\tName of the (connected) BAM-file. }
+    \item{\code{reader}:}{Object of class \code{"externalptr"}:\tPointer to external C++ Object of class BamReader }
   }
 }
 \section{Methods}{
   \describe{
-    \item{bamClose}{\code{signature(object = "bamReader")}: ... }
-    \item{bamOpen}{\code{signature(object = "bamReader")}: ... }
-    \item{CreateIndex}{\code{signature(object = "bamReader")}: ... }
-    \item{filename<-}{\code{signature(object = "bamReader")}: ... }
-    \item{filename}{\code{signature(object = "bamReader")}: ... }
-    \item{GetHeaderText}{\code{signature(object = "bamReader")}: ... }
-    \item{GetNextAlignment}{\code{signature(object = "bamReader")}: ... }
-    \item{GetReferenceCount}{\code{signature(object = "bamReader")}: ... }
-    \item{GetReferenceData}{\code{signature(object = "bamReader")}: ... }
+    \item{bamClose}{\code{signature(object = "bamReader")}: Close opened BAM file }
+    \item{bamOpen}{\code{signature(object = "bamReader")}: Open BAM file }
+    \item{CreateIndex}{\code{signature(object = "bamReader")}: Create index file (.bam.bai) file for BAM-file. }
+    \item{filename<-}{\code{signature(object = "bamReader")}: Setting name of BAM-file }
+    \item{filename}{\code{signature(object = "bamReader")}: Reading name of BAM-file }
+    \item{GetHeaderText}{\code{signature(object = "bamReader")}: Get SAM-Header (as text) from BAM-file }
+    \item{GetNextAlignment}{\code{signature(object = "bamReader")}: Reading next alignment from BAM-file }
+    \item{GetReferenceCount}{\code{signature(object = "bamReader")}: Reading number of reference sequences in alignment }
+    \item{GetReferenceData}{\code{signature(object = "bamReader")}: Reading reference data as data.frame }
     \item{samHeader}{\code{signature(object = "bamReader")}: ... }
     \item{GetReferenceID}{\code{signature(object = "bamReader")}: ... }
     \item{initialize}{\code{signature(.Object = "bamReader")}: ... }
