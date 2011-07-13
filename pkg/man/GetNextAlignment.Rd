@@ -5,8 +5,7 @@
 GetNextAlignment (bamReader)
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
-Retrieves next Alignment from BAM file.
+Retrieves next Alignment from opened bamReader object.
 }
 \usage{
 GetNextAlignment(object)
@@ -19,8 +18,10 @@ A valid instance of class bamReader
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
-GetnextAlignment
+Returns a new created object of type bamAlignment from bamReader object.
+}
+\seealso{
+getNext
 }
 \value{
 %%  ~Describe the value returned
@@ -38,12 +39,8 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 %%  ~~who you are~~
 W.Kaisers
 }
-\note{
-%%  ~~further notes~~
-GetNextAlignment
-}
 \examples{
-# GetNextAlignment
+# GetNextAlignment example
 library(rbamtools)
 bam_file <- system.file("extdata", "accepted_hits.bam", package="rbamtools")
 r<-bamReader(bam_file)

@@ -5,7 +5,6 @@
 Qualities (bamAlignment)
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
 Returns string with ASCII-coded Quality scores.
 }
 \usage{
@@ -19,8 +18,7 @@ An instance of class bamAlignment.
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
-Qualities
+Besides the nucleotide sequence of a read, an alignment program usually reports the quality scores for each nucleotide. These quality scores are ASCII-coded into a character sequence. The quality scores should and the nucleotide sequence (QueryBases) should have the same length.
 }
 \value{
 %%  ~Describe the value returned
