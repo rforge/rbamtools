@@ -31,7 +31,7 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 }
 \author{
 %%  ~~who you are~~
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
 # Rewind(bamReader)

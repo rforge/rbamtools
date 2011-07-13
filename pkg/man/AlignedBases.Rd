@@ -25,7 +25,7 @@ Character string
 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
-W.Kaisers
+Wolfgang Kaisers
 }
 \seealso{
 QueryBases\n

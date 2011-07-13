@@ -3,7 +3,6 @@
 \alias{Paired-methods}
 \title{Paired (bamAlignment)}
 \description{
- ~~ Methods for function \code{Paired}  ~~
 Reading accessor for Paired attribute of bamAlignment.
 }
 \section{Methods}{

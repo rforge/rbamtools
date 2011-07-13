@@ -3,7 +3,6 @@
 \alias{MateReverseStrand-methods}
 \title{MateReverseStrand (bamAlignment)}
 \description{
- ~~ Methods for function \code{MateReverseStrand}  ~~
 Reading accessor for MateReverseStrand attribute
 }
 \section{Methods}{

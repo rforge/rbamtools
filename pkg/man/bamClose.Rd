@@ -19,7 +19,7 @@ An instance of class bamReader or bamWriter.
 \references{ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
 library(rbamtools)

@@ -3,7 +3,6 @@
 \alias{refID-methods}
 \title{refID (bamAlignment)}
 \description{
- ~~ Methods for function \code{refID}  ~~
 Reading accessor for refID attribute of bamAlingment
 }
 \section{Methods}{

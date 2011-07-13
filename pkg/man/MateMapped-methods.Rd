@@ -3,8 +3,7 @@
 \alias{MateMapped-methods}
 \title{MateMapped (bamAlignment)}
 \description{
- ~~ Methods for function \code{MateMapped}  ~~
-Reading accessor for MateMapped attribute
+Reading accessor for MateMapped attribute of bamAlignment objects
 }
 \section{Methods}{
 \describe{

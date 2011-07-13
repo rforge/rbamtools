@@ -3,7 +3,6 @@
 \alias{isValid-methods}
 \title{isValid (bamAlignment)}
 \description{
- ~~ Methods for function \code{isValid}  ~~
 Returns TRUE when bamAlignment is 'valid'.
 }
 \section{Methods}{

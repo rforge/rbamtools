@@ -3,7 +3,6 @@
 \alias{GetReferenceCount-methods}
 \title{GetReferenceCount (bamReader)}
 \description{
- ~~ Methods for function \code{GetReferenceCount}  ~~
 Returns number of References in BAM file.
 }
 \section{Methods}{

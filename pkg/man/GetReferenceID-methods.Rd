@@ -3,7 +3,6 @@
 \alias{GetReferenceID-methods}
 \title{GetReferenceID (bamReader)}
 \description{
- ~~ Methods for function \code{GetReferenceID}  ~~
 Returns refID for given Reference Name.
 }
 \section{Methods}{

@@ -3,7 +3,6 @@
 \alias{filename-methods}
 \title{filename (bamReader, bamWriter)}
 \description{
- ~~ Methods for function \code{filename}  ~~
 Reading accessor for filename attribute of bamReader and bamWriter objects.
 }
 \section{Methods}{

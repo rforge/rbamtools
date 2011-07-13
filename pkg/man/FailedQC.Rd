@@ -26,7 +26,7 @@ Bool.
 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
 # FailedQC(bamAlignment)

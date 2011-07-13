@@ -36,10 +36,10 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 }
 \author{
 %%  ~~who you are~~
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
-# ProperPair(bamAlignment)
+# ProperPair(bamAlignment) example
 library(rbamtools)
 bam_file <- system.file("extdata", "accepted_hits.bam", package="rbamtools")
 r<-bamReader(bam_file)

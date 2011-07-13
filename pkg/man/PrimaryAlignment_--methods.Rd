@@ -3,7 +3,6 @@
 \alias{PrimaryAlignment<--methods}
 \title{PrimaryAlignment (bamAlignment)}
 \description{
- ~~ Methods for function \code{PrimaryAlignment<-}  ~~
 Writing accessor for PrimaryAlignment attribute.
 }
 \section{Methods}{

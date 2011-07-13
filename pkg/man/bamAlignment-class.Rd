@@ -97,7 +97,7 @@ Usually retrieved with GetNextAlignment on open bamReader Object.
 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
 # bamAlignment-class examples

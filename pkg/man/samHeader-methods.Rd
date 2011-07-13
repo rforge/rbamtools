@@ -3,7 +3,7 @@
 \alias{samHeader-methods}
 \title{samHeader (bamReader)}
 \description{
- ~~ Methods for function \code{samHeader}  ~~
+Reading accessor for SAM-header data in bamWriter and bamReader objects.
 }
 \section{Methods}{
 \describe{

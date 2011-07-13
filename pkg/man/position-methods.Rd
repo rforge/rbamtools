@@ -3,7 +3,6 @@
 \alias{position-methods}
 \title{position (bamAlignment)}
 \description{
- ~~ Methods for function \code{position}  ~~
 Reading accessor for position attribute of bamAlignment.
 }
 \section{Methods}{

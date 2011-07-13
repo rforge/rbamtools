@@ -3,7 +3,7 @@
 \alias{Rewind-methods}
 \title{Rewind (bamReader)}
 \description{
- ~~ Methods for function \code{Rewind}  ~~
+Resets the reading position of bamReader to beginning of file. The next call to GetNextAlignment then retrieves the first alignment in the opened BAM-file.
 }
 \section{Methods}{
 \describe{

@@ -24,7 +24,7 @@ data.frame with four columns: RefID, RefName, RefLength, RefHasAlignments.
 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
 #CigarData example

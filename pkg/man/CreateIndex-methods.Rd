@@ -3,12 +3,10 @@
 \alias{CreateIndex-methods}
 \title{CreateIndex (bamReader)}
 \description{
- ~~ Methods for function \code{CreateIndex}  ~~
-CreateIndex method.
+Creates index file (filename.bam.bai) for open bamReader object.
 }
 \section{Methods}{
 \describe{
-
 \item{\code{signature(object = "bamReader")}}{
 %%  ~~describe this method here~~
 }

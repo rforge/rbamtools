@@ -49,7 +49,7 @@ Objects can be created by calls of the form \code{new("bamReader", filename)}.
 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
 showClass("bamReader")

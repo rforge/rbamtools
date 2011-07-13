@@ -1,9 +1,9 @@
 \name{name<--methods}
 \docType{methods}
 \alias{name<--methods}
-\title{name property set (bamAlignment)}
+\title{name (bamAlignment)}
 \description{
- ~~ Methods for function \code{name<-}  ~~
+Writing accessor for name property of bamAlignment objects.
 }
 \section{Methods}{
 \describe{

@@ -3,7 +3,6 @@
 \alias{MateRefID-methods}
 \title{MateRefID (bamAlignment)}
 \description{
- ~~ Methods for function \code{MateRefID}  ~~
 RefID for mate pair alignment.
 }
 \section{Methods}{

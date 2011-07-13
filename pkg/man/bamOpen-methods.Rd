@@ -5,18 +5,17 @@
 \alias{bamOpen,bamWriter-method}
 \title{bamOpen (bamReader, bamWriter)}
 \description{
- ~~ Methods for function \code{bamOpen}  ~~
+Generic function for opening file connection for bamReader and bamWriter objects.
 }
 \section{Methods}{
 \describe{
 
 \item{\code{signature(object = "bamReader")}}{
-%%  ~~describe this method here~~
+Opens connection to BAM-file for bamReader.
 }
 
 \item{\code{signature(object = "bamWriter")}}{
-%%  ~~describe this method here~~
+Opens connection to BAM-file for bamReader.
 }
 }}
 \keyword{methods}
-\keyword{ ~~ other possible keyword(s) ~~ }

@@ -32,7 +32,7 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 }
 \author{
 %%  ~~who you are~~
-W.Kaisers
+Wolfgang Kaisers
 }
 \seealso{
 GetReferenceData
@@ -50,4 +50,3 @@ bamClose(r)
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{GetReferenceCount}
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

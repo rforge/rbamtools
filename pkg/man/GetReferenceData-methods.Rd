@@ -3,7 +3,6 @@
 \alias{GetReferenceData-methods}
 \title{GetReferenceData (bamReader)}
 \description{
- ~~ Methods for function \code{GetReferenceData}  ~~
 Returns Reference data from BAM file.
 }
 \section{Methods}{

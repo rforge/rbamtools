@@ -3,8 +3,7 @@
 \alias{GetNextAlignment-methods}
 \title{GetNextAlignmenet (bamReader)}
 \description{
- ~~ Methods for function \code{GetNextAlignment}  ~~
-Reads next alignment from bamReader
+Reads next alignment from bamReader.
 }
 \section{Methods}{
 \describe{

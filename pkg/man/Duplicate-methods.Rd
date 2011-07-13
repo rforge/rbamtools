@@ -3,7 +3,6 @@
 \alias{Duplicate-methods}
 \title{Duplicate (bamAlignment)}
 \description{
- ~~ Methods for function \code{Duplicate}  ~~
 Reading accessor for Duplicate attribute.
 }
 \section{Methods}{

@@ -3,7 +3,6 @@
 \alias{refData<--methods}
 \title{refData (bamWriter)}
 \description{
- ~~ Methods for function \code{refData<-}  ~~
 Writing accessor for refData in bamWriter objects.
 }
 \section{Methods}{

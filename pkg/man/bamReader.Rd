@@ -27,14 +27,14 @@ Creates an instance of class bamReader and returns it.
 %%  \item{comp1 }{Description of 'comp1'}
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
-An instance of class bamReader. Before reading alignments, there must be a call to "bamOpen".
+An instance of class bamReader. After creating an object of class bamReader, the file connection must be opened with "bamOpen".
 }
 \references{
 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
 %%  ~~who you are~~
-W. Kaisers
+Wolfgang Kaisers
 }
 \seealso{
 %% ~~objects to See Also as \code{\link{help}}, ~~~

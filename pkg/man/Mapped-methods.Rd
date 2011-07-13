@@ -3,8 +3,7 @@
 \alias{Mapped-methods}
 \title{Mapped (bamAlignment)}
 \description{
- ~~ Methods for function \code{Mapped}  ~~
-Reading accessor for 'Mapped' attribute
+Reading accessor for 'Mapped' attribute of bamAlignment objects.
 }
 \section{Methods}{
 \describe{

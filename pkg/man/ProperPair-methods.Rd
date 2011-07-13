@@ -3,7 +3,6 @@
 \alias{ProperPair-methods}
 \title{ProperPair (bamAlignment)}
 \description{
- ~~ Methods for function \code{ProperPair}  ~~
 Reading Accessor for ProperPair attribute of bamAlignment.
 }
 \section{Methods}{

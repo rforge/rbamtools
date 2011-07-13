@@ -5,7 +5,6 @@
 \alias{isOpen,bamWriter-method}
 \title{isOpen (bamReader, bamWriter)}
 \description{
- ~~ Methods for function \code{bamOpen}  ~~
 Returns TRUE when BAM file is opened for bamReader and bamWriter object.
 }
 \section{Methods}{

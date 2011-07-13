@@ -3,8 +3,7 @@
 \alias{getNext-methods}
 \title{getNext (bamAlignment)}
 \description{
- ~~ Methods for function \code{AlignedBases}  ~~
-Retrieving next alignment from BAM-file without creating a new instance of bamAlignemnt.
+Retrieving next alignment from BAM-file without creating a new instance of bamAlignment.
 }
 \section{Methods}{
 \describe{

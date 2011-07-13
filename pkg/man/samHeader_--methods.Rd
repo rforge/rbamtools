@@ -3,8 +3,7 @@
 \alias{samHeader<--methods}
 \title{samHeader<-}
 \description{
- ~~ Methods for function \code{samHeader<-}  ~~
-samHeader_-methods
+Writing accessor for SAM-header data in bamWriter.
 }
 \section{Methods}{
 \describe{

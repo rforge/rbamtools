@@ -40,7 +40,7 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 }
 \author{
 %%  ~~who you are~~
-W.Kaisers
+Wolfgang Kaisers
 }
 \seealso{
 %% ~~objects to See Also as \code{\link{help}}, ~~~

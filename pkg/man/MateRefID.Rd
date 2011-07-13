@@ -24,7 +24,7 @@ An instance of class bamAlignment.
 %%  \item{comp1 }{Description of 'comp1'}
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
-Integer
+Integer.
 }
 \references{
 %% ~put references to the literature/web site here ~
@@ -32,7 +32,7 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 }
 \author{
 %%  ~~who you are~~
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
 # MateRefID (bamAlignment)

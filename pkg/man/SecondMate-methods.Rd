@@ -3,7 +3,6 @@
 \alias{SecondMate-methods}
 \title{SecondMate (bamAlignment)}
 \description{
- ~~ Methods for function \code{SecondMate}  ~~
 Reading accessor for SecondMate attribute of bamAlignment.
 }
 \section{Methods}{

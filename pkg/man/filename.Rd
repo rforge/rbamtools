@@ -27,7 +27,7 @@ String containing current filename of bamReader object (for reading attribute ac
 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).
 }
 \author{
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
 # filename example

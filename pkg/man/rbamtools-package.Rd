@@ -21,8 +21,10 @@ Depends: \tab methods\cr
 Opening BAM files with bamReader objects. Sequential reading file content into bamAlignment objects. Accessing alignment content via accessor functions. Writing BAM files with bamWriter objects.
 }
 \author{
-W.Kaisers
-Maintainer: W.Kaisers <kaisers@med.uni-duesseldorf.de>
+Wolfgang Kaisers\cr
+Zentralbereich Bioinformatik, BMFZ Düsseldorf, www.bmfz.de\cr
+Lehrstuhl für Bioinformatik, Heinrich-Heine-Universität Düsseldorf\cr
+Maintainer: Wolfgang Kaisers <kaisers@med.uni-duesseldorf.de>
 }
 \references{
 Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston College (2009).

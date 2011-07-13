@@ -15,7 +15,7 @@ InsertSize(object)
 \arguments{
   \item{object}{
 %%     ~~Describe \code{object} here~~
-A valid instance of class bamAlignment
+A valid instance of class bamAlignment.
 }
 }
 \value{
@@ -32,7 +32,7 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 }
 \author{
 %%  ~~who you are~~
-W.Kaisers
+Wolfgang Kaisers
 }
 \examples{
 # InsertSize (bamAlignment)

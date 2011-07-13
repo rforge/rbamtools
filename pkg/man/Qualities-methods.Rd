@@ -3,7 +3,6 @@
 \alias{Qualities-methods}
 \title{Qualities (bamAlignment)}
 \description{
- ~~ Methods for function \code{Qualities}  ~~
 Reading accessor for Qualities attribute of bamAlignment.
 }
 \section{Methods}{

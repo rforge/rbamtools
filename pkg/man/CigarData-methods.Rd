@@ -3,7 +3,7 @@
 \alias{CigarData-methods}
 \title{CigarData (bamAlignment)}
 \description{
- ~~ Methods for function \code{CigarData}  ~~
+Returns cigar-data from bamAlignment object as data.frame.
 }
 \section{Methods}{
 \describe{
