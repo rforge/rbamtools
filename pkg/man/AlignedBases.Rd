@@ -12,7 +12,7 @@ AlignedBases(object)
 }
 \arguments{
   \item{object}{
-\tAn instance of class bamAlignment
+An instance of class bamAlignment
 }
 }
 \details{
@@ -28,7 +28,7 @@ Derek Barnett, Michael Stromberg, Marth Lab, Department of Biology, Boston Colle
 Wolfgang Kaisers
 }
 \seealso{
-QueryBases\n
+QueryBases\cr
 Qualities
 }
 \examples{
