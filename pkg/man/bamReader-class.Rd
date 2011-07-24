@@ -24,8 +24,8 @@ Objects can be created by calls of the form \code{new("bamReader", filename)}.
 }
 \section{Slots}{
   \describe{
-    \item{\code{filename}:}{Object of class \code{"character"}:\tabName of the (connected) BAM-file. }
-    \item{\code{reader}:}{Object of class \code{"externalptr"}:\tabPointer to external C++ Object of class BamReader }
+    \item{\code{filename}:}{Object of class \code{"character"}:Name of the (connected) BAM-file. }
+    \item{\code{reader}:}{Object of class \code{"externalptr"}:Pointer to external C++ Object of class BamReader }
   }
 }
 \section{Methods}{
