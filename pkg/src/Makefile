@@ -3,7 +3,7 @@ all: rbamtools.so
 
 rbamtools.so: ./rbamtools.o  ./bamtools/BGZF.o ./bamtools/BamReader.o ./bamtools/BamWriter.o
 	@echo 'creating rbamtools.so:'
-	g++ -fPIC -shared -o"rbamtools.so"  ./rbamtools.o  ./bamtools/BGZF.o ./bamtools/BamReader.o ./bamtools/BamWriter.o
+	g++ -fPIC -shared -o"rbamtools.so"  ./rbamtools.o  ./bamtools/BGZF.o ./bamtools/BamReader.o ./bamtools/BamWriter.o -lz
 
 rbamtools.o: rbamtools.cpp
 	@echo 'creating rbamtools.o:'
