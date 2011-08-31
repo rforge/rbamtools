@@ -9,17 +9,6 @@ name (bamAlignment)
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 Reading and writing accessor for read name.
 }
-\usage{
-name(object)
-name(object)<-"newName"
-}
-%- maybe also 'usage' for other objects documented here.
-\arguments{
-  \item{object}{
-%%     ~~Describe \code{object} here~~
-A valid bamAlignment object.
-}
-}
 \value{
 %%  ~Describe the value returned
 %%  If it is a LIST, use
