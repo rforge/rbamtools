@@ -1,9 +1,0 @@
-PKG_LIBS+=-lz
-BAMTOOLS_OBJECTS = BamWriter.o BamReader.o BGZF.o
-PKG_OBJECTS = rbamtools.o
-OBJECTS = $(BAMTOOLS_OBJECTS:%=bamtools/%) $(PKG_OBJECTS)
-
-all: $(SHLIB)
-
-clean: 
-	rm -f $(OBJECTS)
