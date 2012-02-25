@@ -3,6 +3,7 @@
 #include "faidx.h"
 #include "sam.h"
 #include "bam.h"
+#include <R.h>
 
 #define TYPE_BAM  1
 #define TYPE_READ 2
@@ -61,8 +62,11 @@ samfile_t *samopen(const char *fn, const char *mode, const void *aux)
 					bam_header_destroy(textheader);
 				}
 				if (fp->header->n_targets == 0 && bam_verbose >= 1)
-					fprintf(stderr, "[samopen] no @SQ lines in the header.\n");
-			} else if (bam_verbose >= 2) fprintf(stderr, "[samopen] SAM header is present: %d sequences.\n", fp->header->n_targets);
+					Rprintf("[samopen] no @SQ lines in the header.\n");
+			} else if (bam_verbose >= 2) Rprintf("[samopen] SAM header is present: %d sequences.\n", fp->header->n_targets);
+//			if (fp->header->n_targets == 0 && bam_verbose >= 1)
+//				fprintf(stderr, "[samopen] no @SQ lines in the header.\n");
+//		} else if (bam_verbose >= 2) fprintf(stderr, "[samopen] SAM header is present: %d sequences.\n", fp->header->n_targets);
 		}
 	} else if (strchr(mode, 'w')) { // write
 		fp->header = bam_header_dup((const bam_header_t*)aux);
@@ -97,7 +101,8 @@ samfile_t *samopen(const char *fn, const char *mode, const void *aux)
 				fwrite(fp->header->text, 1, fp->header->l_text, fp->x.tamw); // FIXME: better to skip the trailing NULL
 				if (alt->n_targets) { // then write the header text without dumping ->target_{name,len}
 					if (alt->n_targets != fp->header->n_targets && bam_verbose >= 1)
-						fprintf(stderr, "[samopen] inconsistent number of target sequences. Output the text header.\n");
+						Rprintf("[samopen] inconsistent number of target sequences. Output the text header.\n");
+						// REP: fprintf(stderr, "[samopen] inconsistent number of target sequences. Output the text header.\n");
 				} else { // then dump ->target_{name,len}
 					for (i = 0; i < fp->header->n_targets; ++i)
 						fprintf(fp->x.tamw, "@SQ\tSN:%s\tLN:%d\n", fp->header->target_name[i], fp->header->target_len[i]);
@@ -169,11 +174,14 @@ char *samfaipath(const char *fn_ref)
 	strcat(strcpy(fn_list, fn_ref), ".fai");
 	if (access(fn_list, R_OK) == -1) { // fn_list is unreadable
 		if (access(fn_ref, R_OK) == -1) {
-			fprintf(stderr, "[samfaipath] fail to read file %s.\n", fn_ref);
+			// REP: fprintf(stderr, "[samfaipath] fail to read file %s.\n", fn_ref);
+			Rprintf("[samfaipath] fail to read file %s.\n", fn_ref);
 		} else {
-			if (bam_verbose >= 3) fprintf(stderr, "[samfaipath] build FASTA index...\n");
+			//REP: if (bam_verbose >= 3) fprintf(stderr, "[samfaipath] build FASTA index...\n");
+			if (bam_verbose >= 3) Rprintf("[samfaipath] build FASTA index...\n");
 			if (fai_build(fn_ref) == -1) {
-				fprintf(stderr, "[samfaipath] fail to build FASTA index.\n");
+				//REP: fprintf(stderr, "[samfaipath] fail to build FASTA index.\n");
+				Rprintf("[samfaipath] fail to build FASTA index.\n");
 				free(fn_list); fn_list = 0;
 			}
 		}

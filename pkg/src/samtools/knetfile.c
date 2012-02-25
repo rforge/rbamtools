@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <R.h>
 
 #ifndef _WIN32
 #include <netdb.h>
@@ -69,12 +70,15 @@ static int socket_wait(int fd, int is_read)
 	else fdw = &fds;
 	ret = select(fd+1, fdr, fdw, 0, &tv);
 #ifndef _WIN32
-	if (ret == -1) perror("select");
+	// REP: if (ret == -1) perror("select");
+	if (ret == -1) Rprintf("select %s",strerror(errno));
 #else
 	if (ret == 0)
-		fprintf(stderr, "select time-out\n");
+		// REP: fprintf(stderr, "select time-out\n");
+		Rprintf("select time-out\n");
 	else if (ret == SOCKET_ERROR)
-		fprintf(stderr, "select: %d\n", WSAGetLastError());
+		// REP: fprintf(stderr, "select: %d\n", WSAGetLastError());
+		Rprintf("select: %d\n", WSAGetLastError());
 #endif
 	return ret;
 }
@@ -148,7 +152,7 @@ static SOCKET socket_connect(const char *host, const char *port)
 {
 #define __err_connect(func)										\
 	do {														\
-		fprintf(stderr, "%s: %d\n", func, WSAGetLastError());	\
+		Rprintf("%s: %d\n", func, WSAGetLastError());			\
 		return -1;												\
 	} while (0)
 
@@ -256,7 +260,8 @@ static int kftp_pasv_connect(knetFile *ftp)
 {
 	char host[80], port[10];
 	if (ftp->pasv_port == 0) {
-		fprintf(stderr, "[kftp_pasv_connect] kftp_pasv_prep() is not called before hand.\n");
+		// REP: fprintf(stderr, "[kftp_pasv_connect] kftp_pasv_prep() is not called before hand.\n");
+		Rprintf("[kftp_pasv_connect] kftp_pasv_prep() is not called before hand.\n");
 		return -1;
 	}
 	sprintf(host, "%d.%d.%d.%d", ftp->pasv_ip[0], ftp->pasv_ip[1], ftp->pasv_ip[2], ftp->pasv_ip[3]);
@@ -328,7 +333,8 @@ int kftp_connect_file(knetFile *fp)
 #ifndef _WIN32
     if ( sscanf(fp->response,"%*d %lld", &file_size) != 1 )
     {
-        fprintf(stderr,"[kftp_connect_file] %s\n", fp->response);
+        // REP: fprintf(stderr,"[kftp_connect_file] %s\n", fp->response);
+    	Rprintf("[kftp_connect_file] %s\n", fp->response);
         return -1;
     }
 #else
@@ -353,7 +359,8 @@ int kftp_connect_file(knetFile *fp)
 	kftp_pasv_connect(fp);
 	ret = kftp_get_response(fp);
 	if (ret != 150) {
-		fprintf(stderr, "[kftp_connect_file] %s\n", fp->response);
+		// REP: fprintf(stderr, "[kftp_connect_file] %s\n", fp->response);
+		Rprintf("[kftp_connect_file] %s\n", fp->response);
 		netclose(fp->fd);
 		fp->fd = -1;
 		return -1;
@@ -434,7 +441,8 @@ int khttp_connect_file(knetFile *fp)
 		}
 	} else if (ret != 206 && ret != 200) {
 		free(buf);
-		fprintf(stderr, "[khttp_connect_file] fail to open file (HTTP code: %d).\n", ret);
+		// REP: fprintf(stderr, "[khttp_connect_file] fail to open file (HTTP code: %d).\n", ret);
+		Rprintf("[khttp_connect_file] fail to open file (HTTP code: %d).\n", ret);
 		netclose(fp->fd);
 		fp->fd = -1;
 		return -1;
@@ -452,7 +460,8 @@ knetFile *knet_open(const char *fn, const char *mode)
 {
 	knetFile *fp = 0;
 	if (mode[0] != 'r') {
-		fprintf(stderr, "[kftp_open] only mode \"r\" is supported.\n");
+		// REP: fprintf(stderr, "[kftp_open] only mode \"r\" is supported.\n");
+		Rprintf("[kftp_open] only mode \"r\" is supported.\n");
 		return 0;
 	}
 	if (strstr(fn, "ftp://") == fn) {
@@ -557,7 +566,8 @@ off_t knet_seek(knetFile *fp, int64_t off, int whence)
     else if (fp->type == KNF_TYPE_HTTP) 
     {
 		if (whence == SEEK_END) { // FIXME: can we allow SEEK_END in future?
-			fprintf(stderr, "[knet_seek] SEEK_END is not supported for HTTP. Offset is unchanged.\n");
+			// REP: fprintf(stderr, "[knet_seek] SEEK_END is not supported for HTTP. Offset is unchanged.\n");
+			Rprintf("[knet_seek] SEEK_END is not supported for HTTP. Offset is unchanged.\n");
 			errno = ESPIPE;
 			return -1;
 		}
@@ -569,7 +579,8 @@ off_t knet_seek(knetFile *fp, int64_t off, int whence)
 		return 0;
 	}
 	errno = EINVAL;
-    fprintf(stderr,"[knet_seek] %s\n", strerror(errno));
+    // REP: fprintf(stderr,"[knet_seek] %s\n", strerror(errno));
+	Rprintf("[knet_seek] %s\n", strerror(errno));
 	return -1;
 }
 

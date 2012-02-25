@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <R.h>
 
 #include "khash.h"
 KHASH_MAP_INIT_STR(str, const char *)
@@ -55,7 +56,8 @@ static void debug(const char *format, ...)
 {
     va_list ap;
     va_start(ap, format);
-    vfprintf(stderr, format, ap);
+    //vfprintf(stderr, format, ap);
+    Rprintf(format,ap);
     va_end(ap);
 }
 
@@ -443,7 +445,7 @@ static int sam_header_line_validate(HeaderLine *hline)
     return 1;
 }
 
-
+/*
 static void print_header_line(FILE *fp, HeaderLine *hline)
 {
     list_t *tags = hline->tags;
@@ -462,6 +464,26 @@ static void print_header_line(FILE *fp, HeaderLine *hline)
         tags = tags->next;
     }
     fprintf(fp,"\n");
+}
+*/
+static void print_header_line(HeaderLine *hline)
+{
+    list_t *tags = hline->tags;
+    HeaderTag *tag;
+
+    Rprintf("@%c%c", hline->type[0],hline->type[1]);
+    while (tags)
+    {
+        tag = tags->data;
+
+        Rprintf("\t");
+        if ( tag->key[0]!=' ' || tag->key[1]!=' ' )
+            Rprintf("%c%c:", tag->key[0],tag->key[1]);
+        Rprintf("%s", tag->value);
+
+        tags = tags->next;
+    }
+    Rprintf("\n");
 }
 
 
@@ -712,8 +734,10 @@ void *sam_header_merge(int n, const void **_dicts)
                 
                 if ( status==2 ) 
                 {
-                    print_header_line(stderr,tmpl_hlines->data);
-                    print_header_line(stderr,out_hlines->data);
+                    //print_header_line(stderr,tmpl_hlines->data);
+                    //print_header_line(stderr,out_hlines->data);
+                    print_header_line(tmpl_hlines->data);
+                    print_header_line(out_hlines->data);
                     debug("Conflicting lines, cannot merge the headers.\n");
 					return 0;
                 }

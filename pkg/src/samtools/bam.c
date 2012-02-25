@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
-#include <assert.h>
+//#include <assert.h>
 #include "bam.h"
 #include "bam_endian.h"
 #include "kstring.h"
 #include "sam_header.h"
 
+#include <R.h>
 
 int bam_is_be = 0, bam_verbose = 2;
 char *bam_flag2char_table = "pPuUrR12sfd\0\0\0\0\0";
@@ -78,13 +79,18 @@ bam_header_t *bam_header_read(bamFile fp)
 	if (i < 0) {
 		// If the file is a pipe, checking the EOF marker will *always* fail
 		// with ESPIPE.  Suppress the error message in this case.
-		if (errno != ESPIPE) perror("[bam_header_read] bgzf_check_EOF");
+		// REP: if (errno != ESPIPE) perror("[bam_header_read] bgzf_check_EOF");
+		if (errno != ESPIPE) Rprintf("[bam_reader_read] bgzf_check_EOF %s",strerror( errno ));
+
 	}
-	else if (i == 0) fprintf(stderr, "[bam_header_read] EOF marker is absent. The input is probably truncated.\n");
+	else if (i == 0)
+		// REP: fprintf(stderr, "[bam_header_read] EOF marker is absent. The input is probably truncated.\n");
+		Rprintf("[bam_header_read] EOF marker is absent. The input is probably truncated.\n");
 	// read "BAM1"
 	magic_len = bam_read(fp, buf, 4);
 	if (magic_len != 4 || strncmp(buf, "BAM\001", 4) != 0) {
-		fprintf(stderr, "[bam_header_read] invalid BAM binary header (this is not a BAM file).\n");
+		// REP: fprintf(stderr, "[bam_header_read] invalid BAM binary header (this is not a BAM file).\n");
+		Rprintf("[bam_header_read] invalid BAM binary header (this is not a BAM file).\n");
 		return 0;
 	}
 	header = bam_header_init();
@@ -183,7 +189,9 @@ int bam_read1(bamFile fp, bam1_t *b)
 	int32_t block_len, ret, i;
 	uint32_t x[8];
 
-	assert(BAM_CORE_SIZE == 32);
+	//assert(BAM_CORE_SIZE == 32);
+	if(BAM_CORE_SIZE!=32)
+		return -2;
 	if ((ret = bam_read(fp, &block_len, 4)) != 4) {
 		if (ret == 0) return -1; // normal end-of-file
 		else return -2; // truncated
@@ -214,7 +222,11 @@ inline int bam_write1_core(bamFile fp, const bam1_core_t *c, int data_len, uint8
 {
 	uint32_t x[8], block_len = data_len + BAM_CORE_SIZE, y;
 	int i;
-	assert(BAM_CORE_SIZE == 32);
+
+	//assert(BAM_CORE_SIZE == 32);
+	if(BAM_CORE_SIZE!=32)
+		return -1;
+
 	x[0] = c->tid;
 	x[1] = c->pos;
 	x[2] = (uint32_t)c->bin<<16 | c->qual<<8 | c->l_qname;
@@ -361,3 +373,5 @@ const char *bam_get_library(bam_header_t *h, const bam1_t *b)
 	rg = bam_aux_get(b, "RG");
 	return (rg == 0)? 0 : sam_tbl_get(h->rg2lib, (const char*)(rg + 1));
 }
+
+

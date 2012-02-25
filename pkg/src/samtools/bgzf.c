@@ -119,7 +119,8 @@ int bgzf_check_bgzf(const char *fn)
 
     if ((fp = bgzf_open(fn, "r")) == 0) 
     {
-        fprintf(stderr, "[bgzf_check_bgzf] failed to open the file: %s\n",fn);
+        // REP: fprintf(stderr, "[bgzf_check_bgzf] failed to open the file: %s\n",fn);
+    	Rprintf("[bgzf_check_bgzf] failed to open the file: %s\n",fn);
         return -1;
     }
 

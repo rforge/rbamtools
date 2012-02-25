@@ -742,7 +742,7 @@ static inline bam1_t *bam_copy1(bam1_t *bdst, const bam1_t *bsrc)
   @param  src   source alignment struct
   @return       pointer to the destination alignment struct
  */
-inline bam1_t *bam_dup1(const bam1_t *src)
+static inline bam1_t *bam_dup1(const bam1_t *src)
 {
 	bam1_t *b;
 	b = bam_init1();
@@ -761,6 +761,7 @@ static inline int bam_aux_type2size(int x)
 	else return 0;
 }
 
+// Declaration of bam_sort_core_ext added here because it is used for sorting BAM files (wk).
 /*!
   @abstract Sort an unsorted BAM file based on the chromosome order
   and the leftmost position of an alignment

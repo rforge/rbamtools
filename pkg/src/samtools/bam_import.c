@@ -4,7 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <assert.h>
+#include <R.h>
+//#include <assert.h>
 #ifdef _WIN32
 #include <fcntl.h>
 #endif
@@ -136,7 +137,8 @@ bam_header_t *sam_header_read2(const char *fn)
 		len = atoi(str->s);
 		k = kh_put(ref, hash, s, &ret);
 		if (ret == 0) {
-			fprintf(stderr, "[sam_header_read2] duplicated sequence name: %s\n", s);
+			// REP: fprintf(stderr, "[sam_header_read2] duplicated sequence name: %s\n", s);
+			Rprintf("[sam_header_read2] duplicated sequence name: %s\n", s);
 			error = 1;
 		}
 		kh_value(hash, k) = (uint64_t)len<<32 | i;
@@ -146,7 +148,8 @@ bam_header_t *sam_header_read2(const char *fn)
 	ks_destroy(ks);
 	gzclose(fp);
 	free(str->s); free(str);
-	fprintf(stderr, "[sam_header_read2] %d sequences loaded.\n", kh_size(hash));
+	// REP: fprintf(stderr, "[sam_header_read2] %d sequences loaded.\n", kh_size(hash));
+	Rprintf("[sam_header_read2] %d sequences loaded.\n", kh_size(hash));
 	if (error) return 0;
 	header = hash2header(hash);
 	kh_destroy(ref, hash);
@@ -163,8 +166,9 @@ static inline uint8_t *alloc_data(bam1_t *b, int size)
 }
 static inline void parse_error(int64_t n_lines, const char * __restrict msg)
 {
-	fprintf(stderr, "Parse error at line %lld: %s\n", (long long)n_lines, msg);
-	abort();
+	error("Parse error at line %lld: %s\n", (long long)n_lines, msg);
+	//fprintf(stderr, "Parse error at line %lld: %s\n", (long long)n_lines, msg);
+	//abort();
 }
 static inline void append_text(bam_header_t *header, kstring_t *str)
 {
@@ -176,15 +180,17 @@ static inline void append_text(bam_header_t *header, kstring_t *str)
         header->text = (char*)realloc(header->text, y);
         if ( !header->text ) 
         {
-            fprintf(stderr,"realloc failed to alloc %ld bytes\n", y);
-            abort();
+        	error("realloc failed to alloc %ld bytes\n", y);
+            //fprintf(stderr,"realloc failed to alloc %ld bytes\n", y);
+            //abort();
         }
     }
     // Sanity check
     if ( header->l_text+str->l+1 >= header->n_text )
     {
-        fprintf(stderr,"append_text FIXME: %ld>=%ld, x=%ld,y=%ld\n",  header->l_text+str->l+1,header->n_text,x,y);
-        abort();
+    	error("append_text FIXME: %ld>=%ld, x=%ld,y=%ld\n",  header->l_text+str->l+1,header->n_text,x,y);
+        //fprintf(stderr,"append_text FIXME: %ld>=%ld, x=%ld,y=%ld\n",  header->l_text+str->l+1,header->n_text,x,y);
+        //abort();
     }
 	strncpy(header->text + header->l_text, str->s, str->l+1); // we cannot use strcpy() here.
 	header->l_text += str->l + 1;
@@ -275,9 +281,11 @@ int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b)
 		ret = ks_getuntil(ks, KS_SEP_TAB, str, &dret); z += str->l + 1; c->tid = bam_get_tid(header, str->s);
 		if (c->tid < 0 && strcmp(str->s, "*")) {
 			if (header->n_targets == 0) {
-				fprintf(stderr, "[sam_read1] missing header? Abort!\n");
-				return -7;  // Original line: exit(1);
-			} else fprintf(stderr, "[sam_read1] reference '%s' is recognized as '*'.\n", str->s);
+				error("[sam_read1] missing header? Abort!\n");
+				//fprintf(stderr, "[sam_read1] missing header? Abort!\n");
+				//exit(1);
+			// REP: } else fprintf(stderr, "[sam_read1] reference '%s' is recognized as '*'.\n", str->s);
+			} else Rprintf("[sam_read1] reference '%s' is recognized as '*'.\n", str->s);
 		}
 		ret = ks_getuntil(ks, KS_SEP_TAB, str, &dret); z += str->l + 1; c->pos = isdigit(str->s[0])? atoi(str->s) - 1 : -1;
 		ret = ks_getuntil(ks, KS_SEP_TAB, str, &dret); z += str->l + 1; c->qual = isdigit(str->s[0])? atoi(str->s) : 0;
@@ -317,7 +325,8 @@ int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b)
 			doff += c->n_cigar * 4;
 		} else {
 			if (!(c->flag&BAM_FUNMAP)) {
-				fprintf(stderr, "Parse warning at line %lld: mapped sequence without CIGAR\n", (long long)fp->n_lines);
+				// REP: fprintf(stderr, "Parse warning at line %lld: mapped sequence without CIGAR\n", (long long)fp->n_lines);
+				Rprintf("Parse warning at line %lld: mapped sequence without CIGAR\n", (long long)fp->n_lines);
 				c->flag |= BAM_FUNMAP;
 			}
 			c->bin = bam_reg2bin(c->pos, c->pos + 1);
@@ -340,8 +349,8 @@ int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b)
 		if (strcmp(str->s, "*")) {
 			c->l_qseq = strlen(str->s);
 			if (c->n_cigar && c->l_qseq != (int32_t)bam_cigar2qlen(c, bam1_cigar(b))) {
-			  fprintf(stderr, "Line %ld, sequence length %i vs %i from CIGAR\n",
-				  (long)fp->n_lines, c->l_qseq, (int32_t)bam_cigar2qlen(c, bam1_cigar(b)));
+			  // REP: fprintf(stderr, "Line %ld, sequence length %i vs %i from CIGAR\n",(long)fp->n_lines, c->l_qseq, (int32_t)bam_cigar2qlen(c, bam1_cigar(b)));
+				Rrintf("Line %ld, sequence length %i vs %i from CIGAR\n",(long)fp->n_lines, c->l_qseq, (int32_t)bam_cigar2qlen(c, bam1_cigar(b)));
 			  parse_error(fp->n_lines, "CIGAR and sequence length are inconsistent");
 			}
 			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2) + doff;
@@ -388,8 +397,8 @@ int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b)
 						*s++ = 'i'; *(int32_t*)s = (int32_t)x;
 						s += 4; doff += 5;
 						if (x < -2147483648ll)
-							fprintf(stderr, "Parse warning at line %lld: integer %lld is out of range.",
-									(long long)fp->n_lines, x);
+							// REP: fprintf(stderr, "Parse warning at line %lld: integer %lld is out of range.",(long long)fp->n_lines, x);
+							Rprintf("Parse warning at line %lld: integer %lld is out of range.",(long long)fp->n_lines, x);
 					}
 				} else {
 					if (x <= 255) {
@@ -402,8 +411,8 @@ int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b)
 						*s++ = 'I'; *(uint32_t*)s = (uint32_t)x;
 						s += 4; doff += 5;
 						if (x > 4294967295ll)
-							fprintf(stderr, "Parse warning at line %lld: integer %lld is out of range.",
-									(long long)fp->n_lines, x);
+							// REP: fprintf(stderr, "Parse warning at line %lld: integer %lld is out of range.",(long long)fp->n_lines, x);
+							Rprintf("Parse warning at line %lld: integer %lld is out of range.",(long long)fp->n_lines, x);
 					}
 				}
 			} else if (type == 'f') {

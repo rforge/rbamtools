@@ -37,6 +37,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "razf.h"
+#include <R.h>
 
 
 #if ZLIB_VERNUM < 0x1221
@@ -147,7 +148,8 @@ static void load_zindex(RAZF *rz, int fd){
 #ifdef _RZ_READONLY
 static RAZF* razf_open_w(int fd)
 {
-	fprintf(stderr, "[razf_open_w] Writing is not available with zlib ver < 1.2.2.1\n");
+	// REP: fprintf(stderr, "[razf_open_w] Writing is not available with zlib ver < 1.2.2.1\n");
+	Rprintf("[razf_open_w] Writing is not available with zlib ver < 1.2.2.1\n");
 	return 0;
 }
 #else
@@ -399,7 +401,8 @@ static RAZF* razf_open_r(int fd, int _load_index){
 	rz->block_off = 0;
 	if(ext_len < 7 || memcmp(rz->inbuf + ext_off, c, 4) != 0) return rz;
 	if(((((unsigned char*)rz->inbuf)[ext_off + 5] << 8) | ((unsigned char*)rz->inbuf)[ext_off + 6]) != RZ_BLOCK_SIZE){
-		fprintf(stderr, " -- WARNING: RZ_BLOCK_SIZE is not %d, treat source as gz file.  in %s -- %s:%d --\n", RZ_BLOCK_SIZE, __FUNCTION__, __FILE__, __LINE__);
+		// REP: fprintf(stderr, " -- WARNING: RZ_BLOCK_SIZE is not %d, treat source as gz file.  in %s -- %s:%d --\n", RZ_BLOCK_SIZE, __FUNCTION__, __FILE__, __LINE__);
+		Rprintf( " -- WARNING: RZ_BLOCK_SIZE is not %d, treat source as gz file.  in %s -- %s:%d --\n", RZ_BLOCK_SIZE, __FUNCTION__, __FILE__, __LINE__);
 		return rz;
 	}
 	rz->load_index = _load_index;
@@ -466,14 +469,16 @@ static RAZF* razf_open_r(int fd, int _load_index){
 
 #ifdef _USE_KNETFILE
 RAZF* razf_dopen(int fd, const char *mode){
-    if (strstr(mode, "r")) fprintf(stderr,"[razf_dopen] implement me\n");
+    // REP: if (strstr(mode, "r")) fprintf(stderr,"[razf_dopen] implement me\n");
+	if (strstr(mode, "r")) Rprintf("[razf_dopen] implement me\n");
     else if(strstr(mode, "w")) return razf_open_w(fd);
 	return NULL;
 }
 
 RAZF* razf_dopen2(int fd, const char *mode)
 {
-    fprintf(stderr,"[razf_dopen2] implement me\n");
+    // REP: fprintf(stderr,"[razf_dopen2] implement me\n");
+	Rprintf("[razf_dopen2] implement me\n");
     return NULL;
 }
 #else
@@ -498,7 +503,8 @@ static inline RAZF* _razf_open(const char *filename, const char *mode, int _load
 #ifdef _USE_KNETFILE
         knetFile *fd = knet_open(filename, "r");
         if (fd == 0) {
-            fprintf(stderr, "[_razf_open] fail to open %s\n", filename);
+            // REP: fprintf(stderr, "[_razf_open] fail to open %s\n", filename);
+        	Rprintf("[_razf_open] fail to open %s\n", filename);
             return NULL;
         }
 #else

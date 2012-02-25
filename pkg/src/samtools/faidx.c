@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "faidx.h"
 #include "khash.h"
+#include <R.h>
 
 typedef struct {
 	int32_t line_len, line_blen;
@@ -96,7 +97,8 @@ faidx_t *fai_build_core(RAZF *rz)
 			}
 			name[l_name] = '\0';
 			if (ret == 0) {
-				fprintf(stderr, "[fai_build_core] the last entry has no sequence\n");
+				// REP: fprintf(stderr, "[fai_build_core] the last entry has no sequence\n");
+				Rprintf("[fai_build_core] the last entry has no sequence\n");
 				free(name); fai_destroy(idx);
 				return 0;
 			}
@@ -105,7 +107,8 @@ faidx_t *fai_build_core(RAZF *rz)
 			offset = razf_tell(rz);
 		} else {
 			if (state == 3) {
-				fprintf(stderr, "[fai_build_core] inlined empty line is not allowed in sequence '%s'.\n", name);
+				// REP: fprintf(stderr, "[fai_build_core] inlined empty line is not allowed in sequence '%s'.\n", name);
+				Rprintf("[fai_build_core] inlined empty line is not allowed in sequence '%s'.\n", name);
 				free(name); fai_destroy(idx);
 				return 0;
 			}
@@ -116,7 +119,8 @@ faidx_t *fai_build_core(RAZF *rz)
 				if (isgraph(c)) ++l2;
 			} while ((ret = razf_read(rz, &c, 1)) && c != '\n');
 			if (state == 3 && l2) {
-				fprintf(stderr, "[fai_build_core] different line length in sequence '%s'.\n", name);
+				//REP: fprintf(stderr, "[fai_build_core] different line length in sequence '%s'.\n", name);
+				Rprintf("[fai_build_core] different line length in sequence '%s'.\n", name);
 				free(name); fai_destroy(idx);
 				return 0;
 			}
@@ -195,7 +199,8 @@ int fai_build(const char *fn)
 	sprintf(str, "%s.fai", fn);
 	rz = razf_open(fn, "r");
 	if (rz == 0) {
-		fprintf(stderr, "[fai_build] fail to open the FASTA file %s\n",fn);
+		// REP: fprintf(stderr, "[fai_build] fail to open the FASTA file %s\n",fn);
+		Rprintf("[fai_build] fail to open the FASTA file %s\n",fn);
 		free(str);
 		return -1;
 	}
@@ -203,7 +208,8 @@ int fai_build(const char *fn)
 	razf_close(rz);
 	fp = fopen(str, "wb");
 	if (fp == 0) {
-		fprintf(stderr, "[fai_build] fail to write FASTA index %s\n",str);
+		// REP: fprintf(stderr, "[fai_build] fail to write FASTA index %s\n",str);
+		Rprintf("[fai_build] fail to write FASTA index %s\n",str);
 		fai_destroy(fai); free(str);
 		return -1;
 	}
@@ -236,11 +242,13 @@ FILE *download_and_open(const char *fn)
     // If failed, download from remote and open
     fp_remote = knet_open(url, "rb");
     if (fp_remote == 0) {
-        fprintf(stderr, "[download_from_remote] fail to open remote file %s\n",url);
+        // REP: fprintf(stderr, "[download_from_remote] fail to open remote file %s\n",url);
+    	Rprintf("[download_from_remote] fail to open remote file %s\n",url);
         return NULL;
     }
     if ((fp = fopen(fn, "wb")) == 0) {
-        fprintf(stderr, "[download_from_remote] fail to create file in the working directory %s\n",fn);
+        // REP: fprintf(stderr, "[download_from_remote] fail to create file in the working directory %s\n",fn);
+    	Rprintf("[download_from_remote] fail to create file in the working directory %s\n",fn);
         knet_close(fp_remote);
         return NULL;
     }
@@ -269,7 +277,8 @@ faidx_t *fai_load(const char *fn)
         fp = download_and_open(str);
         if ( !fp )
         {
-            fprintf(stderr, "[fai_load] failed to open remote FASTA index %s\n", str);
+            // REP: fprintf(stderr, "[fai_load] failed to open remote FASTA index %s\n", str);
+        	Rprintf("[fai_load] failed to open remote FASTA index %s\n", str);
             free(str);
             return 0;
         }
@@ -278,11 +287,13 @@ faidx_t *fai_load(const char *fn)
 #endif
         fp = fopen(str, "rb");
 	if (fp == 0) {
-		fprintf(stderr, "[fai_load] build FASTA index.\n");
+		// REP: fprintf(stderr, "[fai_load] build FASTA index.\n");
+		Rprintf("[fai_load] build FASTA index.\n");
 		fai_build(fn);
 		fp = fopen(str, "rb");
 		if (fp == 0) {
-			fprintf(stderr, "[fai_load] fail to open FASTA index.\n");
+			// REP: fprintf(stderr, "[fai_load] fail to open FASTA index.\n");
+			Rprintf("[fai_load] fail to open FASTA index.\n");
 			free(str);
 			return 0;
 		}
@@ -294,7 +305,8 @@ faidx_t *fai_load(const char *fn)
 	fai->rz = razf_open(fn, "rb");
 	free(str);
 	if (fai->rz == 0) {
-		fprintf(stderr, "[fai_load] fail to open FASTA file.\n");
+		// REP: fprintf(stderr, "[fai_load] fail to open FASTA file.\n");
+		Rprintf("[fai_load] fail to open FASTA file.\n");
 		return 0;
 	}
 	return fai;
@@ -367,7 +379,8 @@ char *fai_fetch(const faidx_t *fai, const char *str, int *len)
 int faidx_main(int argc, char *argv[])
 {
 	if (argc == 1) {
-		fprintf(stderr, "Usage: faidx <in.fasta> [<reg> [...]]\n");
+		// REP: fprintf(stderr, "Usage: faidx <in.fasta> [<reg> [...]]\n");
+		Rprintf("Usage: faidx <in.fasta> [<reg> [...]]\n");
 		return 1;
 	} else {
 		if (argc == 2) fai_build(argv[1]);

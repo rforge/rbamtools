@@ -3,17 +3,20 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <assert.h>
+//#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include "bam.h"
 #include "ksort.h"
+#include <R.h>
 
-static int g_is_by_qname = 0;
+// All "static" declarations removed (wk).
 
-static inline int strnum_cmp(const char *a, const char *b)
+int g_is_by_qname = 0;
+
+inline int strnum_cmp(const char *a, const char *b)
 {
 	char *pa, *pb;
 	pa = (char*)a; pb = (char*)b;
@@ -43,7 +46,7 @@ typedef struct {
 
 #define __pos_cmp(a, b) ((a).pos > (b).pos || ((a).pos == (b).pos && ((a).i > (b).i || ((a).i == (b).i && (a).idx > (b).idx))))
 
-static inline int heap_lt(const heap1_t a, const heap1_t b)
+int heap_lt(const heap1_t a, const heap1_t b)
 {
 	if (g_is_by_qname) {
 		int t;
@@ -55,7 +58,7 @@ static inline int heap_lt(const heap1_t a, const heap1_t b)
 
 KSORT_INIT(heap, heap1_t, heap_lt)
 
-static void swap_header_targets(bam_header_t *h1, bam_header_t *h2)
+void swap_header_targets(bam_header_t *h1, bam_header_t *h2)
 {
 	bam_header_t t;
 	t.n_targets = h1->n_targets, h1->n_targets = h2->n_targets, h2->n_targets = t.n_targets;
@@ -63,7 +66,7 @@ static void swap_header_targets(bam_header_t *h1, bam_header_t *h2)
 	t.target_len = h1->target_len, h1->target_len = h2->target_len, h2->target_len = t.target_len;
 }
 
-static void swap_header_text(bam_header_t *h1, bam_header_t *h2)
+void swap_header_text(bam_header_t *h1, bam_header_t *h2)
 {
 	int tempi;
 	char *temps;
@@ -104,7 +107,8 @@ int bam_merge_core(int by_qname, const char *out, const char *headers, int n, ch
 		tamFile fpheaders = sam_open(headers);
 		if (fpheaders == 0) {
 			const char *message = strerror(errno);
-			fprintf(stderr, "[bam_merge_core] cannot open '%s': %s\n", headers, message);
+			// REP: fprintf(stderr, "[bam_merge_core] cannot open '%s': %s\n", headers, message);
+			Rprintf("[bam_merge_core] cannot open '%s': %s\n", headers, message);
 			return -1;
 		}
 		hheaders = sam_header_read(fpheaders);
@@ -136,7 +140,8 @@ int bam_merge_core(int by_qname, const char *out, const char *headers, int n, ch
 		fp[i] = bam_open(fn[i], "r");
 		if (fp[i] == 0) {
 			int j;
-			fprintf(stderr, "[bam_merge_core] fail to open file %s\n", fn[i]);
+			// REP: fprintf(stderr, "[bam_merge_core] fail to open file %s\n", fn[i]);
+			Rprintf("[bam_merge_core] fail to open file %s\n", fn[i]);
 			for (j = 0; j < i; ++j) bam_close(fp[j]);
 			free(fp); free(heap);
 			// FIXME: possible memory leak
@@ -151,8 +156,8 @@ int bam_merge_core(int by_qname, const char *out, const char *headers, int n, ch
 
 			for (j = 0; j < min_n_targets; ++j)
 				if (strcmp(hout->target_name[j], hin->target_name[j]) != 0) {
-					fprintf(stderr, "[bam_merge_core] different target sequence name: '%s' != '%s' in file '%s'\n",
-							hout->target_name[j], hin->target_name[j], fn[i]);
+					// REP: fprintf(stderr, "[bam_merge_core] different target sequence name: '%s' != '%s' in file '%s'\n",hout->target_name[j], hin->target_name[j], fn[i]);
+					Rprintf("[bam_merge_core] different target sequence name: '%s' != '%s' in file '%s'\n",hout->target_name[j], hin->target_name[j], fn[i]);
 					return -1;
 				}
 
@@ -174,12 +179,14 @@ int bam_merge_core(int by_qname, const char *out, const char *headers, int n, ch
 		// of reference information.
 		if (hheaders->n_targets > 0) {
 			if (hout->n_targets != hheaders->n_targets) {
-				fprintf(stderr, "[bam_merge_core] number of @SQ headers in '%s' differs from number of target sequences\n", headers);
+				// REP: fprintf(stderr, "[bam_merge_core] number of @SQ headers in '%s' differs from number of target sequences\n", headers);
+				Rprintf("[bam_merge_core] number of @SQ headers in '%s' differs from number of target sequences\n", headers);
 				if (!reg) return -1;
 			}
 			for (j = 0; j < hout->n_targets; ++j)
 				if (strcmp(hout->target_name[j], hheaders->target_name[j]) != 0) {
-					fprintf(stderr, "[bam_merge_core] @SQ header '%s' in '%s' differs from target sequence\n", hheaders->target_name[j], headers);
+					// REP: fprintf(stderr, "[bam_merge_core] @SQ header '%s' in '%s' differs from target sequence\n", hheaders->target_name[j], headers);
+					Rprintf("[bam_merge_core] @SQ header '%s' in '%s' differs from target sequence\n", hheaders->target_name[j], headers);
 					if (!reg) return -1;
 				}
 		}
@@ -191,7 +198,8 @@ int bam_merge_core(int by_qname, const char *out, const char *headers, int n, ch
 	if (reg) {
 		int tid, beg, end;
 		if (bam_parse_region(hout, reg, &tid, &beg, &end) < 0) {
-			fprintf(stderr, "[%s] Malformated region string or undefined reference name\n", __func__);
+			// REP: fprintf(stderr, "[%s] Malformated region string or undefined reference name\n", __func__);
+			Rprintf("[%s] Malformated region string or undefined reference name\n", __func__);
 			return -1;
 		}
 		for (i = 0; i < n; ++i) {
@@ -216,7 +224,8 @@ int bam_merge_core(int by_qname, const char *out, const char *headers, int n, ch
 	else if (flag & MERGE_LEVEL1) fpout = strcmp(out, "-")? bam_open(out, "w1") : bam_dopen(fileno(stdout), "w1");
 	else fpout = strcmp(out, "-")? bam_open(out, "w") : bam_dopen(fileno(stdout), "w");
 	if (fpout == 0) {
-		fprintf(stderr, "[%s] fail to create the output file.\n", __func__);
+		// REP: fprintf(stderr, "[%s] fail to create the output file.\n", __func__);
+		Rprintf("[%s] fail to create the output file.\n", __func__);
 		return -1;
 	}
 	bam_header_write(fpout, hout);
@@ -238,7 +247,7 @@ int bam_merge_core(int by_qname, const char *out, const char *headers, int n, ch
 			heap->pos = HEAP_EMPTY;
 			free(heap->b->data); free(heap->b);
 			heap->b = 0;
-		} else fprintf(stderr, "[bam_merge_core] '%s' is truncated. Continue anyway.\n", fn[heap->i]);
+		} else Rprintf("[bam_merge_core] '%s' is truncated. Continue anyway.\n", fn[heap->i]);
 		ks_heapadjust(heap, 0, n, heap);
 	}
 
@@ -272,25 +281,26 @@ int bam_merge(int argc, char *argv[])
 		}
 	}
 	if (optind + 2 >= argc) {
-		fprintf(stderr, "\n");
-		fprintf(stderr, "Usage:   samtools merge [-nr] [-h inh.sam] <out.bam> <in1.bam> <in2.bam> [...]\n\n");
-		fprintf(stderr, "Options: -n       sort by read names\n");
-		fprintf(stderr, "         -r       attach RG tag (inferred from file names)\n");
-		fprintf(stderr, "         -u       uncompressed BAM output\n");
-		fprintf(stderr, "         -f       overwrite the output BAM if exist\n");
-		fprintf(stderr, "         -1       compress level 1\n");
-		fprintf(stderr, "         -R STR   merge file in the specified region STR [all]\n");
-		fprintf(stderr, "         -h FILE  copy the header in FILE to <out.bam> [in1.bam]\n\n");
-		fprintf(stderr, "Note: Samtools' merge does not reconstruct the @RG dictionary in the header. Users\n");
-		fprintf(stderr, "      must provide the correct header with -h, or uses Picard which properly maintains\n");
-		fprintf(stderr, "      the header dictionary in merging.\n\n");
+		Rprintf("\n");
+		Rprintf("Usage:   samtools merge [-nr] [-h inh.sam] <out.bam> <in1.bam> <in2.bam> [...]\n\n");
+		Rprintf("Options: -n       sort by read names\n");
+		Rprintf("         -r       attach RG tag (inferred from file names)\n");
+		Rprintf("         -u       uncompressed BAM output\n");
+		Rprintf("         -f       overwrite the output BAM if exist\n");
+		Rprintf("         -1       compress level 1\n");
+		Rprintf("         -R STR   merge file in the specified region STR [all]\n");
+		Rprintf("         -h FILE  copy the header in FILE to <out.bam> [in1.bam]\n\n");
+		Rprintf("Note: Samtools' merge does not reconstruct the @RG dictionary in the header. Users\n");
+		Rprintf("      must provide the correct header with -h, or uses Picard which properly maintains\n");
+		Rprintf("      the header dictionary in merging.\n\n");
 		return 1;
 	}
 	if (!(flag & MERGE_FORCE) && strcmp(argv[optind], "-")) {
 		FILE *fp = fopen(argv[optind], "rb");
 		if (fp != NULL) {
 			fclose(fp);
-			fprintf(stderr, "[%s] File '%s' exists. Please apply '-f' to overwrite. Abort.\n", __func__, argv[optind]);
+			// REP: fprintf(stderr, "[%s] File '%s' exists. Please apply '-f' to overwrite. Abort.\n", __func__, argv[optind]);
+			Rprintf("[%s] File '%s' exists. Please apply '-f' to overwrite. Abort.\n", __func__, argv[optind]);
 			return 1;
 		}
 	}
@@ -302,7 +312,7 @@ int bam_merge(int argc, char *argv[])
 
 typedef bam1_t *bam1_p;
 
-static inline int bam1_lt(const bam1_p a, const bam1_p b)
+inline int bam1_lt(const bam1_p a, const bam1_p b)
 {
 	if (g_is_by_qname) {
 		int t = strnum_cmp(bam1_qname(a), bam1_qname(b));
@@ -311,7 +321,7 @@ static inline int bam1_lt(const bam1_p a, const bam1_p b)
 }
 KSORT_INIT(sort, bam1_p, bam1_lt)
 
-static void sort_blocks(int n, int k, bam1_p *buf, const char *prefix, const bam_header_t *h, int is_stdout)
+void sort_blocks(int n, int k, bam1_p *buf, const char *prefix, const bam_header_t *h, int is_stdout)
 {
 	char *name, mode[3];
 	int i;
@@ -327,7 +337,8 @@ static void sort_blocks(int n, int k, bam1_p *buf, const char *prefix, const bam
 	}
 	fp = is_stdout? bam_dopen(fileno(stdout), mode) : bam_open(name, mode);
 	if (fp == 0) {
-		fprintf(stderr, "[sort_blocks] fail to create file %s.\n", name);
+		// REP: fprintf(stderr, "[sort_blocks] fail to create file %s.\n", name);
+		Rprintf("[sort_blocks] fail to create file %s.\n", name);
 		free(name);
 		// FIXME: possible memory leak
 		return;
@@ -365,7 +376,8 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 	n = k = 0; mem = 0;
 	fp = strcmp(fn, "-")? bam_open(fn, "r") : bam_dopen(fileno(stdin), "r");
 	if (fp == 0) {
-		fprintf(stderr, "[bam_sort_core] fail to open file %s\n", fn);
+		// REP: fprintf(stderr, "[bam_sort_core] fail to open file %s\n", fn);
+		Rprintf("[bam_sort_core] fail to open file %s\n", fn);
 		return;
 	}
 	header = bam_header_read(fp);
@@ -383,11 +395,13 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 		}
 	}
 	if (ret != -1)
-		fprintf(stderr, "[bam_sort_core] truncated file. Continue anyway.\n");
+		//REP: fprintf(stderr, "[bam_sort_core] truncated file. Continue anyway.\n");
+		Rprintf("[bam_sort_core] truncated file. Continue anyway.\n");
 	if (n == 0) sort_blocks(-1, k, buf, prefix, header, is_stdout);
 	else { // then merge
 		char **fns, *fnout;
-		fprintf(stderr, "[bam_sort_core] merging from %d files...\n", n+1);
+		// REP: fprintf(stderr, "[bam_sort_core] merging from %d files...\n", n+1);
+		Rprintf("[bam_sort_core] merging from %d files...\n", n+1);
 		sort_blocks(n++, k, buf, prefix, header, 0);
 		fnout = (char*)calloc(strlen(prefix) + 20, 1);
 		if (is_stdout) sprintf(fnout, "-");
@@ -433,7 +447,7 @@ int bam_sort(int argc, char *argv[])
 		}
 	}
 	if (optind + 2 > argc) {
-		fprintf(stderr, "Usage: samtools sort [-on] [-m <maxMem>] <in.bam> <out.prefix>\n");
+		// REP: fprintf(stderr, "Usage: samtools sort [-on] [-m <maxMem>] <in.bam> <out.prefix>\n");
 		return 1;
 	}
 	bam_sort_core_ext(is_by_qname, argv[optind], argv[optind+1], max_mem, is_stdout);
