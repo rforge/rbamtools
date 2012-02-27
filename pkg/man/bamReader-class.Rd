@@ -3,13 +3,13 @@
 \docType{class}
 \alias{bamReader-class}
 \alias{createIndex,bamReader-method}
+\alias{getHeader,bamReader-method}
 \alias{getHeaderText,bamReader-method}
 \alias{getNextAlign,bamReader-method}
 \alias{getRefCount,bamReader-method}
 \alias{getRefData,bamReader-method}
 \alias{bamSort,bamReader-method}
-\alias{index,bamReader-method}
-\alias{index<-,bamReader-method}
+\alias{loadIndex,bamReader-method}
 \alias{initialize,bamReader-method}
 \alias{index.initialized,bamReader-method}
 
@@ -21,6 +21,7 @@
     \item{\code{filename}:}{Character denoting name of BAM-file.}
     \item{\code{reader}:}{External pointer to opened BAM-file.}
     \item{\code{index}:}{External pointer to BAM index (used for retrieving bamRange objects from BAM-file.}
+    \item{\code{indexName}:}{Name of opened index file.}
   }
 }
 \section{Methods}{
@@ -49,7 +50,7 @@ idx_file <- system.file("extdata", "accepted_hits.bam.bai", package="rbamtools")
 reader<-bamReader(bam_file)
 isOpen(reader)
 align<-getNextAlign(reader)
-index(reader)<-idx_file
+loadIndex(reader,idx_file)
 index.initialized(reader)
 coords<-as.integer(c(0,0,1874))
 range<-bamRange(reader,coords)

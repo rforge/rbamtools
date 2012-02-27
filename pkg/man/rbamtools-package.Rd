@@ -49,7 +49,7 @@ idx_file <- system.file("extdata", "accepted_hits.bam.bai", package="rbamtools")
 reader<-bamReader(bam_file)
 isOpen(reader)
 align<-getNextAlign(reader)
-index(reader)<-idx_file
+loadIndex(reader,idx_file)
 index.initialized(reader)
 coords<-as.integer(c(0,0,1874))
 range<-bamRange(reader,coords)

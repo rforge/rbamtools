@@ -23,7 +23,7 @@ isOpen(reader)
 align<-getNextAlign(reader)
 if(is.null(align))
 	print("End of File!\n")
-index(reader)<-idx_file
+loadIndex(reader,idx_file)
 index.initialized(reader)
 coords<-as.integer(c(0,0,1874))
 range<-bamRange(reader,coords)

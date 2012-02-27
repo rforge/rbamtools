@@ -1,5 +1,7 @@
 \name{bamReader}
 \alias{bamReader}
+\alias{loadIndex}
+\alias{index.initialized}
 \title{bamReader}
 \description{bamReader represents a connection to a BAM-file.}
 \usage{bamReader(filename)}
@@ -8,11 +10,14 @@
 }
 \author{Wolfgang Kaisers}
 \examples{
-bam_file <- system.file("extdata", "accepted_hits.bam", package="rbamtools")
+bam_file<-system.file("extdata","accepted_hits.bam", package="rbamtools")
+idx_file<-system.file("extdata","accepted_hits.bam.bai",package="rbamtools")
 reader<-bamReader(bam_file)
 align<-getNextAlign(reader)
 name(align)
 position(align)
+loadIndex(reader,idx_file)
+index.initialized(reader)
 bamClose(reader)
 }
 \keyword{bamReader}

@@ -4,9 +4,10 @@
 \description{
 The header section contains various data fields which provide metadata about the stored alignment results. Returns an unparsed character string containing the header section of a BAM-file. Part of the Header-Text is the RefData information.
 }
-\usage{getHeaderText(object)}
+\usage{getHeaderText(object, delim = "\t")}
 \arguments{
   \item{object}{An object of class bamReader}
+  \item{delim}{Character used as tag delimiter}
 }
 \details{
 The Header section of a BAM-file consists of the header line and the Reference sequence dictionary.

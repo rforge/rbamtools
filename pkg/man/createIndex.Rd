@@ -16,7 +16,7 @@ bam_file <- system.file("extdata", "accepted_hits.bam", package="rbamtools")
 reader<-bamReader(bam_file)
 idx_file<-"index.bam.bai"
 createIndex(reader,idx_file)
-index(reader)<-idx_file
+loadIndex(reader,idx_file)
 index.initialized(reader)
 bamClose(reader)
 }
