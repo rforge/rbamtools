@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <R.h>
 #include "bgzf.h"
 
 #include "khash.h"

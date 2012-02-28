@@ -21,8 +21,6 @@ exportMethods(
     removeRows,
     addSeq,
     getHeaderText,
-    head,
-    tail,
     createIndex,
     loadIndex,
     getNextAlign,
