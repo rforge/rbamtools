@@ -482,7 +482,7 @@ int bam_index_build2(const char *fn, const char *_fnidx)
 	bam_index_t *idx;
 	if ((fp = bam_open(fn, "r")) == 0) {
 		// REP: fprintf(stderr, "[bam_index_build2] fail to open the BAM file.\n");
-		Rprintf("[bam_index_build2] fail to open the BAM file.\n");
+		Rprintf("[bam_index_build2] fail to open BAM file: '%s'\n",fn);
 		return -1;
 	}
 	idx = bam_index_core(fp);
