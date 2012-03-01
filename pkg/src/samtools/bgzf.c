@@ -713,4 +713,3 @@ int64_t bgzf_seek(BGZF* fp, int64_t pos, int where)
     fp->block_address = block_address;
     fp->block_offset = block_offset;
     return 0;
-}
