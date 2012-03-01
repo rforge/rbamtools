@@ -54,7 +54,6 @@ inline int cigar2str(char *c,const bam1_t *align)
 
 		strncat(c,&(CIGAR_TYPES[cigar[i] & BAM_CIGAR_MASK]),1);
 	}
-	//Rprintf("cigar2str: %s\t",c);
 	return strlen(c);
 }
 
@@ -93,15 +92,17 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(filename)!=STRSXP)
 		{
-			error("BamReader Open: filename must be a string");
+			error("[bam_reader_open] Filename must be a string.\n");
 			return R_NilValue;
 		}
 		const char* _filename=CHAR(STRING_ELT(filename,0));
+
+		//Rprintf("[bam_reader_open] Opening file: %s\n",_filename);
 		samfile_t *reader=samopen(_filename,"rb",0);
 		if(!reader)
-			error("bam_reader_open: Opening bam_file \"%s\" failed!",_filename);
+			error("[bam_reader_open] Opening bam_file \"%s\" failed!",_filename);
 		else
-			Rprintf("BamReader opened file \"%s\"\n",_filename);
+			Rprintf("bamReader opened file \"%s\"\n",_filename);
 
 		SEXP pReader;
 		PROTECT(pReader=R_MakeExternalPtr( (void*)(reader),R_NilValue,R_NilValue));
@@ -114,7 +115,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pReader)!=EXTPTRSXP)
 		{
-			error("bam_disconnect: no external pointer!");
+			error("[bam_reader_close] No external pointer!");
 			return R_NilValue;
 		}
 		samfile_t *reader=(samfile_t*) (R_ExternalPtrAddr(pReader));
@@ -128,7 +129,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pReader)!=EXTPTRSXP)
 		{
-			error("bam_disconnect: no external pointer!");
+			error("[bam_reader_get_header_text] No external pointer!");
 			return R_NilValue;
 		}
 		samfile_t *reader=(samfile_t*) (R_ExternalPtrAddr(pReader));
@@ -144,7 +145,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pReader)!=EXTPTRSXP)
 		{
-			error("bam_reader_GetReferenceCount: no external pointer!");
+			error("[bam_reader_get_ref_count] No external pointer!");
 			return R_NilValue;
 		}
 		samfile_t *reader=(samfile_t*) (R_ExternalPtrAddr(pReader));
@@ -159,7 +160,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pReader)!=EXTPTRSXP)
 		{
-			error("bam_reader_GetReferenceData: no external pointer!");
+			error("[bam_reader_get_ref_data] No external pointer!");
 			return R_NilValue;
 		}
 		samfile_t *reader=(samfile_t*)(R_ExternalPtrAddr(pReader));
@@ -173,17 +174,17 @@ SEXP is_nil_externalptr(SEXP ptr)
 		++nProtected;
 		int nRows=header->n_targets;
 
-		// Column 0: RefID
+		// Column 0: ID (RefID)
 		SEXP RefID_vector;
 		PROTECT(RefID_vector=allocVector(INTSXP,nRows));
 		++nProtected;
 
-		// Column 1: RefName
+		// Column 1: SN (RefName)
 		SEXP RefName_vector;
 		PROTECT(RefName_vector=allocVector(STRSXP,nRows));
 		++nProtected;
 
-		// Column 2: RefLength
+		// Column 2: LN (RefLength)
 		SEXP RefLength_vector;
 		PROTECT(RefLength_vector=allocVector(INTSXP,nRows));
 		++nProtected;
@@ -203,42 +204,44 @@ SEXP is_nil_externalptr(SEXP ptr)
 		SEXP col_names;
 		PROTECT(col_names=allocVector(STRSXP,nCols));
 		++nProtected;
-		SET_STRING_ELT(col_names,0,mkChar("refID"));
-		SET_STRING_ELT(col_names,1,mkChar("refName"));
-		SET_STRING_ELT(col_names,2,mkChar("refLength"));
+		SET_STRING_ELT(col_names,0,mkChar("ID"));
+		SET_STRING_ELT(col_names,1,mkChar("SN"));
+		SET_STRING_ELT(col_names,2,mkChar("LN"));
 		setAttrib(dflist,R_NamesSymbol,col_names);
 
 		SEXP row_names;
 	    PROTECT(row_names=allocVector(STRSXP,nRows));
 	    ++nProtected;
 	    char c[20];
-	    sprintf(c,"%i",1);
-	    SET_STRING_ELT(row_names,0,mkChar(c));
+	    for(i=1;i<=nRows;++i)
+	    {
+	    	sprintf(c,"%i",i);
+	    	SET_STRING_ELT(row_names,i-1,mkChar(c));
+	    }
         setAttrib(dflist,R_RowNamesSymbol,row_names);
-
 		setAttrib(dflist,R_ClassSymbol,mkString("data.frame"));
 		UNPROTECT(nProtected);
 		return dflist;
 	}
 
-	SEXP bam_reader_create_index(SEXP bam_file,SEXP idx_file)
+	SEXP bam_reader_create_index(SEXP pBamFile,SEXP pIdxFile)
 	{
-		if(TYPEOF(bam_file)!=STRSXP)
+		if(TYPEOF(pBamFile)!=STRSXP)
 		{
-			error("bam_reader_CreateIndex: bam_file must be a string!\n");
+			error("[bam_reader_create_index] BamFile must be a string!\n");
 			return R_NilValue;
 		}
-		if(TYPEOF(idx_file)!=STRSXP)
+		if(TYPEOF(pIdxFile)!=STRSXP)
 		{
-			error("bam_reader_CreateIndex: idx_file must be a string!\n");
+			error("[bam_reader_create_index] IndexFile must be a string!\n");
 			return R_NilValue;
 		}
-		const char *_bam_file=CHAR(STRING_ELT(bam_file,0));
-		const char *_idx_file=CHAR(STRING_ELT(idx_file,0));
+		const char *bamFile=CHAR(STRING_ELT(pBamFile,0));
+		const char *idxFile=CHAR(STRING_ELT(pIdxFile,0));
 
 		SEXP ans;
 		PROTECT(ans=Rf_allocVector(INTSXP,1));
-		INTEGER(ans)[0]=bam_index_build2(_bam_file,_idx_file);
+		INTEGER(ans)[0]=bam_index_build2(bamFile,idxFile);
 		UNPROTECT(1);
 		return ans;
 	}
@@ -247,24 +250,24 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(ptr)!=EXTPTRSXP)
 		{
-			error("finalize_bam_index: no external pointer!");
+			error("[finalize_bam_index] No external pointer!");
 			return;
 		}
 		bam_index_t *index=(bam_index_t *)(R_ExternalPtrAddr(ptr));
 		bam_index_destroy(index);	// checks for zero
 		R_SetExternalPtrAddr(ptr,NULL);
-		Rprintf("finalize_bam_index: Index finalized\n");
+		//Rprintf("bamIndex finalized.\n");
 	}
 
-	SEXP bam_reader_load_index(SEXP idx_file)
+	SEXP bam_reader_load_index(SEXP pIdxFile)
 	{
-		if(TYPEOF(idx_file)!=STRSXP)
+		if(TYPEOF(pIdxFile)!=STRSXP)
 		{
-			error("bam_reader_CreateIndex: idx_file must be a string!\n");
+			error("[bam_reader_load_index] pIdxFile must be a string!\n");
 			return R_NilValue;
 		}
-		const char *_idx_file=CHAR(STRING_ELT(idx_file,0));
-		FILE *f=fopen(_idx_file,"rb");
+		const char *idxFile=CHAR(STRING_ELT(pIdxFile,0));
+		FILE *f=fopen(idxFile,"rb");
 
 		bam_index_t *index = bam_index_load_core(f);
 		SEXP idx;
@@ -278,13 +281,13 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pIdx)!=EXTPTRSXP)
 		{
-			error("bam_reader_unload_index: no external pointer!\n");
+			error("[bam_reader_unload_index] No external pointer!\n");
 			return R_NilValue;
 		}
 		bam_index_t *idx=(bam_index_t *)(R_ExternalPtrAddr(pIdx));
 		bam_index_destroy(idx);
 		R_SetExternalPtrAddr(pIdx,NULL);
-		Rprintf("bam_reader_unload_index: index unloaded.\n");
+		//Rprintf("bam_reader_unload_index: index unloaded.\n");
 		return R_NilValue;
 	}
 
@@ -292,7 +295,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pReader)!=EXTPTRSXP)
 		{
-			error("bam_reader_get_next_align: no external pointer!\n");
+			error("[bam_reader_get_next_align] No external pointer!\n");
 			return R_NilValue;
 		}
 
@@ -318,6 +321,45 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ptr;
 	}
 
+
+	SEXP bam_reader_sort_file(SEXP pFilename,SEXP pPrefix,SEXP pMaxMem,SEXP pByName)
+	{
+		if(TYPEOF(pFilename)!=STRSXP)
+		{
+			error("[bam_writer_sort_file] Filename must be a string\n");
+			return R_NilValue;
+		}
+		if(TYPEOF(pPrefix)!=STRSXP)
+		{
+			error("[bam_writer_sort_file] Prefix must be a string\n");
+			return R_NilValue;
+		}
+		if(TYPEOF(pMaxMem)!=REALSXP)
+		{
+			error("[bam_writer_sort_file] MaxMem must be integer value!\n");
+			return R_NilValue;
+		}
+		if(TYPEOF(pByName)!=LGLSXP)
+		{
+			error("[bam_writer_sort_file] ByName must be bool value!\n");
+			return R_NilValue;
+		}
+		const char *filename=CHAR(STRING_ELT(pFilename,0));
+		const char *prefix=CHAR(STRING_ELT(pPrefix,0));
+		size_t max_mem=*REAL(pMaxMem);
+		_Bool sort_by_name =*(LOGICAL(AS_LOGICAL(pByName)));
+
+		if(sort_by_name)
+		{
+			bam_sort_core_ext(1, filename, prefix, max_mem, 0);
+		}
+		else
+		{
+			bam_sort_core_ext(0, filename, prefix, max_mem, 0);
+		}
+		return R_NilValue;
+	}
+
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// BamRange
 	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -326,7 +368,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(ptr)!=EXTPTRSXP)
 		{
-			error("finalize_bam_range: no external pointer!\n");
+			error("[finalize_bam_range] No external pointer!\n");
 			return;
 		}
 		align_list *l=(align_list *)(R_ExternalPtrAddr(ptr));
@@ -351,7 +393,6 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		align_list *l=(align_list*)data;
 		push_back(l,b);
-		//Rprintf("fetch_func: size=%i\n",l->size);
 		return 0;
 	}
 
@@ -359,22 +400,22 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pReader)!=EXTPTRSXP)
 		{
-			error("bam_range_fetch: pReader is no external pointer!\n");
+			error("[bam_range_fetch] pReader is no external pointer!\n");
 			return R_NilValue;
 		}
 		if(TYPEOF(pIndex)!=EXTPTRSXP)
 		{
-			error("bam_range_fetch: pIndex is no external pointer!\n");
+			error("[bam_range_fetch] pIndex is no external pointer!\n");
 			return R_NilValue;
 		}
-		if(TYPEOF(pCoords)!=INTSXP)
+		if(TYPEOF(pCoords)!=REALSXP)
 		{
-			error("bam_range_fetch: pCoords is no INTEGER!\n");
+			error("[bam_range_fetch] pCoords is no REAL!\n");
 			return R_NilValue;
 		}
 		if(LENGTH(pCoords)!=3)
 		{
-			error("bam_range_fetch: pCoords must contain three values (refid,begin,end)!\n");
+			error("[bam_range_fetch] pCoords must contain three values (refid,begin,end)!\n");
 			return R_NilValue;
 		}
 
@@ -382,28 +423,28 @@ SEXP is_nil_externalptr(SEXP ptr)
 		bam_index_t *index=(bam_index_t*)(R_ExternalPtrAddr(pIndex));
 		if(reader==NULL)
 		{
-			error("bam_range_fetch: Reader must not be NULL pointer!\n");
+			error("[bam_range_fetch] Reader must not be NULL pointer!\n");
 			return R_NilValue;
 		}
 		if(index==NULL)
 		{
-			error("bam_range_fetch: Index must not be NULL pointer!\n");
+			error("[bam_range_fetch] Index must not be NULL pointer!\n");
 			return R_NilValue;
 		}
 
-		int *pi=INTEGER_POINTER(pCoords);
-		int refid=pi[0];
-		int begin=pi[1];
-		int end=pi[2];
+		double *pi=REAL(pCoords);
+		int refid=(int) pi[0];
+		int begin=(int) pi[1];
+		int end=(int) pi[2];
 
 		if(refid<0 || refid >=(reader->header->n_targets))
 		{
-			error("bam_range_fetch: refid out of range!\n");
+			error("[bam_range_fetch] refid out of range!\n");
 			return R_NilValue;
 		}
 		if(begin<0 || begin>=end || end>(reader->header->target_len[refid]))
 		{
-			error("bam_range_fetch: begin or end out of range!\n");
+			error("[bam_range_fetch] Begin or end out of range!\n");
 			return R_NilValue;
 		}
 
@@ -421,7 +462,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	SEXP bam_range_get_next_align(SEXP pRange)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
-			error("bam_range_get_next_align: no external pointer!");
+			error("[bam_range_get_next_align] No external pointer!");
 
 		align_list *l=(align_list*)(R_ExternalPtrAddr(pRange));
 		bam1_t *align=get_next_align(l);
@@ -438,7 +479,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	SEXP bam_range_get_prev_align(SEXP pRange)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
-			error("bam_range_get_prev_align: no external pointer!\n");
+			error("[bam_range_get_prev_align] No external pointer!\n");
 		align_list *l=(align_list*)(R_ExternalPtrAddr(pRange));
 		bam1_t *align=get_prev_align(l);
 		if(align==NULL)
@@ -456,12 +497,12 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_push_back: pRange is no external pointer!\n");
+			error("[bam_range_push_back] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_range_push_back: pAlign is no external pointer!\n");
+			error("[bam_range_push_back] pAlign is no external pointer!\n");
 			return R_NilValue;
 		}
 		write_current_align((align_list*)(R_ExternalPtrAddr(pRange)),(bam1_t*) (R_ExternalPtrAddr(pAlign)));
@@ -472,12 +513,12 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_push_back: pRange is no external pointer!\n");
+			error("[bam_range_push_back] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_range_push_back: pAlign is no external pointer!\n");
+			error("[bam_range_push_back] pAlign is no external pointer!\n");
 			return R_NilValue;
 		}
 		insert_past_curr_align((align_list*)(R_ExternalPtrAddr(pRange)),(bam1_t*) (R_ExternalPtrAddr(pAlign)));
@@ -488,12 +529,12 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_push_back: pRange is no external pointer!\n");
+			error("[bam_range_push_back] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_range_push_back: pAlign is no external pointer!\n");
+			error("[bam_range_push_back] pAlign is no external pointer!\n");
 			return R_NilValue;
 		}
 		insert_pre_curr_align((align_list*)(R_ExternalPtrAddr(pRange)),(bam1_t*) (R_ExternalPtrAddr(pAlign)));
@@ -503,7 +544,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	SEXP bam_range_get_align_df(SEXP pRange)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
-			error("bam_range_get_align_df: no external pointer!");
+			error("[bam_range_get_align_df] no external pointer!");
 
 		align_list *l=(align_list*)(R_ExternalPtrAddr(pRange));
 
@@ -567,7 +608,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 			// Cigar String
 			if(cigar2str(buf,align)==0)
 			{
-				error("bam_alignment_get_align_df: cigar error!\n");
+				error("[bam_align_get_align_df] Cigar error!\n");
 				return R_NilValue;
 			}
 			SET_STRING_ELT(cig_vector,i,mkChar(buf));
@@ -644,12 +685,12 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_write: pRange is no external pointer!\n");
+			error("[bam_range_write] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		if(TYPEOF(pWriter)!=EXTPTRSXP)
 		{
-			error("bam_range_write: pWriter is no external pointer!\n");
+			error("[bam_range_write] pWriter is no external pointer!\n");
 			return R_NilValue;
 		}
 
@@ -674,7 +715,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_get_size: pRange is no external pointer!\n");
+			error("[bam_range_get_size] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		align_list *l=(align_list*)(R_ExternalPtrAddr(pRange));
@@ -686,7 +727,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_get_size: pRange is no external pointer!\n");
+			error("[bam_range_get_size] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		align_list *l=(align_list*)(R_ExternalPtrAddr(pRange));
@@ -701,12 +742,12 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_push_back: pRange is no external pointer!\n");
+			error("[bam_range_push_back] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_range_push_back: pAlign is no external pointer!\n");
+			error("[bam_range_push_back] pAlign is no external pointer!\n");
 			return R_NilValue;
 		}
 		push_back((align_list*)(R_ExternalPtrAddr(pRange)),(bam1_t*) (R_ExternalPtrAddr(pAlign)));
@@ -717,12 +758,12 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_push_front: pRange is no external pointer!\n");
+			error("[bam_range_push_front] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_range_push_front: pAlign is no external pointer!\n");
+			error("[bam_range_push_front] pAlign is no external pointer!\n");
 			return R_NilValue;
 		}
 		push_front((align_list*)(R_ExternalPtrAddr(pRange)),(bam1_t*) (R_ExternalPtrAddr(pAlign)));
@@ -733,7 +774,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_pop_back: pRange is no external pointer!\n");
+			error("[bam_range_pop_back] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		pop_back((align_list*)(R_ExternalPtrAddr(pRange)));
@@ -743,7 +784,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pRange)!=EXTPTRSXP)
 		{
-			error("bam_range_pop_front: pRange is no external pointer!\n");
+			error("[bam_range_pop_front] pRange is no external pointer!\n");
 			return R_NilValue;
 		}
 		pop_front((align_list*)(R_ExternalPtrAddr(pRange)));
@@ -759,7 +800,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(ptr)!=EXTPTRSXP)
 		{
-			error("finalize_bam_writer: no external pointer!");
+			error("[finalize_bam_writer] No external pointer!");
 			return;
 		}
 		samfile_t *writer=(samfile_t*)(R_ExternalPtrAddr(ptr));
@@ -767,11 +808,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 		{
 			samclose(writer);
 			R_SetExternalPtrAddr(ptr,NULL);
-			Rprintf("finalize_bam_writer: finalized!\n");
-		}
-		else
-		{
-			Rprintf("finalize_bam_writer: nothing to finalize!\n");
+			Rprintf("bamWriter finalized!\n");
 		}
 	}
 
@@ -779,12 +816,12 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pReader)!=EXTPTRSXP)
 		{
-			error("bam_writer_connect_reader: pReader no external pointer!\n");
+			error("[bam_writer_open] pReader no external pointer!\n");
 			return R_NilValue;
 		}
 		if(TYPEOF(pFilename)!=STRSXP)
 		{
-			error("bam_writer_connect_reader: pFilename no string!\n");
+			error("[bam_writer_open] pFilename no string!\n");
 			return R_NilValue;
 		}
 		samfile_t *reader=(samfile_t*) (R_ExternalPtrAddr(pReader));
@@ -801,12 +838,12 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pWriter)!=EXTPTRSXP)
 		{
-			error("bam_writer_save_align writer: no external pointer!\n");
+			error("[bam_writer_save_align] No external pointer!\n");
 			return R_NilValue;
 		}
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_writer_save_align align: no external pointer!\n");
+			error("[bam_writer_save_align] No external pointer!\n");
 			return R_NilValue;
 		}
 		samfile_t *writer=(samfile_t*)R_ExternalPtrAddr(pWriter);
@@ -823,7 +860,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 	{
 		if(TYPEOF(pWriter)!=EXTPTRSXP)
 		{
-			error("bam_writer_close: no exteranl pointer!\n");
+			error("[bam_writer_close] No exteranl pointer!\n");
 			return R_NilValue;
 		}
 		samfile_t *writer= (samfile_t*) (R_ExternalPtrAddr(pWriter));
@@ -833,45 +870,6 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_reader_sort_file(SEXP pFilename,SEXP pPrefix,SEXP pMaxMem,SEXP pByName)
-	{
-		if(TYPEOF(pFilename)!=STRSXP)
-		{
-			error("[bam_writer_sort_file] Filename must be a string\n");
-			return R_NilValue;
-		}
-		if(TYPEOF(pPrefix)!=STRSXP)
-		{
-			error("[bam_writer_sort_file] Prefix must be a string\n");
-			return R_NilValue;
-		}
-		if(TYPEOF(pMaxMem)!=INTSXP)
-		{
-			error("[bam_writer_sort_file] MaxMem must be integer value!\n");
-			return R_NilValue;
-		}
-		if(TYPEOF(pByName)!=LGLSXP)
-		{
-			error("[bam_writer_sort_file] ByName must be bool value!\n");
-			return R_NilValue;
-		}
-		const char *filename=CHAR(STRING_ELT(pFilename,0));
-		const char *prefix=CHAR(STRING_ELT(pPrefix,0));
-		size_t max_mem=*INTEGER(pMaxMem);
-		_Bool sort_by_name =*(LOGICAL(AS_LOGICAL(pByName)));
-
-		if(sort_by_name)
-		{
-			bam_sort_core_ext(1, filename, prefix, max_mem, 0);
-		}
-		else
-		{
-			bam_sort_core_ext(0, filename, prefix, max_mem, 0);
-		}
-		return R_NilValue;
-	}
-
-
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// bam_align
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -879,16 +877,15 @@ SEXP is_nil_externalptr(SEXP ptr)
 	static void finalize_bam_align(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
-			error("finalize_bam_align: no external pointer!");
+			error("[finalize_bam_align] No external pointer!");
 		bam1_t *align= (bam1_t*)(R_ExternalPtrAddr(pAlign));
 		bam_destroy1(align);	// checks for >0!
-		//Rprintf("finalize_bam_align: finalized\n");
 	}
 
-	SEXP bam_alignment_get_name(SEXP pAlign)
+	SEXP bam_align_get_name(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
-			error("bam_alignment_getName: no external pointer!");
+			error("[bam_align_get_name] No external pointer!");
 		bam1_t *align= (bam1_t*)(R_ExternalPtrAddr(pAlign));
 
 		SEXP ans;
@@ -898,10 +895,10 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_get_refid(SEXP pAlign)
+	SEXP bam_align_get_refid(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
-			error("bam_alignment_getRefID: no external pointer!");
+			error("[bam_align_getRefID] No external pointer!");
 		bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
 
 		SEXP ans;
@@ -911,10 +908,10 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_get_position(SEXP pAlign)
+	SEXP bam_align_get_position(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
-			error("bam_alignment_getPosition: no external pointer!");
+			error("[bam_align_get_position] No external pointer!");
 		bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
 
 		SEXP ans;
@@ -924,10 +921,10 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_get_cigar_df(SEXP pAlign)
+	SEXP bam_align_get_cigar_df(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
-			error("bam_alignment_getCigar_df: no external pointer");
+			error("[bam_align_get_cigar_df] No external pointer");
 		bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
 
 		// create data.frame
@@ -954,7 +951,7 @@ SEXP is_nil_externalptr(SEXP ptr)
 		{
 			if((cigar[i]&BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))
 			{
-				error("bam_alignment_getCigar_df: cigar_type not in defined range!");
+				error("[bam_align_getCigar_df] Cigar_type not in defined range!");
 				return R_NilValue;
 			}
 			INTEGER(Length_vector)[i]=cigar[i] >> BAM_CIGAR_SHIFT;
@@ -990,10 +987,10 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return dflist;
 	}
 
-	SEXP bam_alignment_get_mate_refid(SEXP pAlign)
+	SEXP bam_align_get_mate_refid(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
-			error("bam1_t_getMateRefID: no external pointer!");
+			error("[bam_align_get_mate_refid] No external pointer!");
 		bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
 
 		SEXP ans;
@@ -1003,10 +1000,10 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_get_mate_position(SEXP pAlign)
+	SEXP bam_align_get_mate_position(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
-			error("bam1_t_getMatePosition: no external pointer!");
+			error("[bam_align_get_mate_position] No external pointer!");
 		bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
 
 		SEXP ans;
@@ -1016,10 +1013,10 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_get_insert_size(SEXP pAlign)
+	SEXP bam_align_get_insert_size(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
-			error("bam1_t_getInsertSize: no external pointer!");
+			error("[bam_align_get_insert_size] No external pointer!");
 		bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
 
 		SEXP ans;
@@ -1029,10 +1026,10 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_get_map_quality(SEXP pAlign)
+	SEXP bam_align_get_map_quality(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
-			error("bam1_t_getMapQuality: no external pointer!");
+			error("[bam_align_get_map_quality] No external pointer!");
 		bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
 
 		SEXP ans;
@@ -1042,11 +1039,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_get_read_bases(SEXP pAlign)
+	SEXP bam_align_get_read_bases(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_Alignment_getQueryBases: no external pointer!");
+			error("[bam_align_get_read_bases] No external pointer!");
 			return R_NilValue;
 		}
 
@@ -1068,11 +1065,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_get_qualities(SEXP pAlign)
+	SEXP bam_align_get_qualities(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_get_qualities: no external pointer!");
+			error("[bam_align_get_qualities] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
@@ -1087,11 +1084,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Alignment flags
 
-	SEXP bam_alignment_is_paired(SEXP pAlign)
+	SEXP bam_align_is_paired(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_is_paired: no external pointer!");
+			error("[bam_align_is_paired] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
@@ -1102,11 +1099,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_mapped_in_proper_pair(SEXP pAlign)
+	SEXP bam_align_mapped_in_proper_pair(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_mapped_in_proper_pair: no external pointer!");
+			error("[bam_align_mapped_in_proper_pair] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*) (R_ExternalPtrAddr(pAlign));
@@ -1117,11 +1114,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_is_unmapped(SEXP pAlign)
+	SEXP bam_align_is_unmapped(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_is_unmapped: no external pointer!");
+			error("[bam_align_is_unmapped] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*) (R_ExternalPtrAddr(pAlign));
@@ -1133,11 +1130,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_mate_is_unmapped(SEXP pAlign)
+	SEXP bam_align_mate_is_unmapped(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_mate_is_unmapped: no external pointer!");
+			error("[bam_align_mate_is_unmapped] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*) (R_ExternalPtrAddr(pAlign));
@@ -1149,11 +1146,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_strand_reverse(SEXP pAlign)
+	SEXP bam_align_strand_reverse(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_strand_reverse: no external pointer!");
+			error("[bam_align_strand_reverse] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*) (R_ExternalPtrAddr(pAlign));
@@ -1165,11 +1162,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_mate_strand_reverse(SEXP pAlign)
+	SEXP bam_align_mate_strand_reverse(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_strand_reverse: no external pointer!");
+			error("[bam_align_strand_reverse] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1181,11 +1178,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_is_first_in_pair(SEXP pAlign)
+	SEXP bam_align_is_first_in_pair(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_is_first_in_pair: no external pointer!");
+			error("[bam_align_is_first_in_pair] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1197,11 +1194,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_is_second_in_pair(SEXP pAlign)
+	SEXP bam_align_is_second_in_pair(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_is_first_in_pair: no external pointer!");
+			error("[bam_align_is_first_in_pair] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1213,11 +1210,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_is_secondary_align(SEXP pAlign)
+	SEXP bam_align_is_secondary_align(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_is_secondary_align: no external pointer!");
+			error("[bam_align_is_secondary_align] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1229,11 +1226,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_fail_qc(SEXP pAlign)
+	SEXP bam_align_fail_qc(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_fail_qc: no external pointer!");
+			error("[bam_align_fail_qc] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1245,11 +1242,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_is_pcr_or_optical_dup(SEXP pAlign)
+	SEXP bam_align_is_pcr_or_optical_dup(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_is_pcr_or_optical_dup: no external pointer!");
+			error("[bam_align_is_pcr_or_optical_dup] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1261,11 +1258,11 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return ans;
 	}
 
-	SEXP bam_alignment_get_flag(SEXP pAlign)
+	SEXP bam_align_get_flag(SEXP pAlign)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_get_flag: no external pointer!");
+			error("[bam_align_get_flag] No external pointer!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1279,16 +1276,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Writing accessors
-	SEXP bam_alignment_set_is_paired(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_is_paired(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_is_paired: no external pointer!");
+			error("[bam_align_set_is_paired] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_is_paired: no bool value!");
+			error("[bam_align_set_is_paired] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1296,16 +1293,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_mapped_in_proper_pair(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_mapped_in_proper_pair(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_mapped_in_proper_pair: no external pointer!");
+			error("[bam_align_set_mapped_in_proper_pair] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_mapped_in_proper_pair: no bool value!");
+			error("[bam_align_set_mapped_in_proper_pair] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1313,16 +1310,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_is_unmapped(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_is_unmapped(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_is_unmapped: no external pointer!");
+			error("[bam_align_set_is_unmapped] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_is_unmapped: no bool value!");
+			error("[bam_align_set_is_unmapped] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1330,16 +1327,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_mate_is_unmapped(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_mate_is_unmapped(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_mate_is_unmapped: no external pointer!");
+			error("[bam_align_set_mate_is_unmapped] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_mate_is_unmapped: no bool value!");
+			error("[bam_align_set_mate_is_unmapped] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1347,16 +1344,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_strand_reverse(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_strand_reverse(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_strand_reverse: no external pointer!");
+			error("[bam_align_set_strand_reverse] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_strand_reverse: no bool value!");
+			error("[bam_align_set_strand_reverse] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1364,16 +1361,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_mate_strand_reverse(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_mate_strand_reverse(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_mate_strand_reverse: no external pointer!");
+			error("[bam_align_set_mate_strand_reverse] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_mate_strand_reverse: no bool value!");
+			error("[bam_align_set_mate_strand_reverse] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1381,16 +1378,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_is_first_in_pair(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_is_first_in_pair(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_is_first_in_pair: no external pointer!");
+			error("[bam_align_set_is_first_in_pair] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_is_first_in_pair: no bool value!");
+			error("[bam_align_set_is_first_in_pair] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1398,16 +1395,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_is_second_in_pair(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_is_second_in_pair(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_is_second_in_pair: no external pointer!");
+			error("[bam_align_set_is_second_in_pair] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_is_second_in_pair: no bool value!");
+			error("[bam_align_set_is_second_in_pair] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1415,16 +1412,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_is_secondary_align(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_is_secondary_align(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_is_secondary_align: no external pointer!");
+			error("[bam_align_set_is_secondary_align] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_is_secondary_align: no bool value!");
+			error("[bam_align_set_is_secondary_align] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1432,16 +1429,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_fail_qc(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_fail_qc(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_fail_qc: no external pointer!");
+			error("[bam_align_set_fail_qc] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_fail_qc: no bool value!");
+			error("[bam_align_set_fail_qc] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1449,16 +1446,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_is_pcr_or_optical_dup(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_is_pcr_or_optical_dup(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_is_pcr_or_optical_dup: no external pointer!");
+			error("[bam_align_set_is_pcr_or_optical_dup] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=LGLSXP)
 		{
-			error("bam_alignment_set_is_pcr_or_optical_dup: no bool value!");
+			error("[bam_align_set_is_pcr_or_optical_dup] No bool value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
@@ -1466,16 +1463,16 @@ SEXP is_nil_externalptr(SEXP ptr)
 		return R_NilValue;
 	}
 
-	SEXP bam_alignment_set_flag(SEXP pAlign, SEXP val)
+	SEXP bam_align_set_flag(SEXP pAlign, SEXP val)
 	{
 		if(TYPEOF(pAlign)!=EXTPTRSXP)
 		{
-			error("bam_alignment_set_flag: no external pointer!");
+			error("[bam_align_set_flag] No external pointer!");
 			return R_NilValue;
 		}
 		if(TYPEOF(val)!=INTSXP)
 		{
-			error("bam_alignment_set_flag: no integer value!");
+			error("[bam_align_set_flag] No integer value!");
 			return R_NilValue;
 		}
 		bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));

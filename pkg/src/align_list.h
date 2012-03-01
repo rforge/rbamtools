@@ -37,7 +37,7 @@ inline align_list * init_align_list()
 
 inline void copy_align(bam1_t *target,const bam1_t * const source)
 {
-	// see bam.h bam_dup1
+	// see bam.h duplicate_align
 	if(target==NULL)
 		return;
 	*target=*source;
@@ -47,10 +47,21 @@ inline void copy_align(bam1_t *target,const bam1_t * const source)
 	memcpy(target->data,source->data,target->data_len);
 }
 
+inline bam1_t *duplicate_align(const bam1_t *src)
+{
+	bam1_t *b;
+	b = bam_init1();
+	*b = *src;
+	b->m_data = b->data_len;
+	b->data = (uint8_t*)calloc(b->data_len, 1);
+	memcpy(b->data, src->data, b->data_len);
+	return b;
+}
+
 inline align_element* init_elem(const bam1_t *align)
 {
 	align_element *e=calloc(1,sizeof(align_element));
-	e->align=bam_dup1(align);
+	e->align=duplicate_align(align);
 	return e;
 }
 
@@ -164,13 +175,13 @@ inline bam1_t * get_next_align(align_list *l)		// Returns A COPY of current alig
 	if(l->curr_el==NULL)
 	{
 		l->curr_el=l->first_el;
-		return bam_dup1(l->curr_el->align);	// Copy!
+		return duplicate_align(l->curr_el->align);	// Copy!
 	}
 	if(l->curr_el->next_el==NULL)
 		return (bam1_t*) NULL;
 
 	l->curr_el=l->curr_el->next_el;
-	return bam_dup1(l->curr_el->align);		// Copy!
+	return duplicate_align(l->curr_el->align);		// Copy!
 }
 
 inline bam1_t * get_prev_align(align_list *l)
@@ -180,12 +191,12 @@ inline bam1_t * get_prev_align(align_list *l)
 	if((l->curr_el)==NULL)
 	{
 		l->curr_el=l->last_el;
-		return bam_dup1(l->curr_el->align);	// Copy!
+		return duplicate_align(l->curr_el->align);	// Copy!
 	}
 	if((l->curr_el->last_el)==NULL)
 		return (bam1_t*) NULL;
 	l->curr_el=l->curr_el->last_el;
-	return bam_dup1(l->curr_el->align);
+	return duplicate_align(l->curr_el->align);
 }
 
 inline void write_current_align(align_list *l,bam1_t *align)

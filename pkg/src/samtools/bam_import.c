@@ -350,7 +350,7 @@ int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b)
 			c->l_qseq = strlen(str->s);
 			if (c->n_cigar && c->l_qseq != (int32_t)bam_cigar2qlen(c, bam1_cigar(b))) {
 			  // REP: fprintf(stderr, "Line %ld, sequence length %i vs %i from CIGAR\n",(long)fp->n_lines, c->l_qseq, (int32_t)bam_cigar2qlen(c, bam1_cigar(b)));
-				Rrintf("Line %ld, sequence length %i vs %i from CIGAR\n",(long)fp->n_lines, c->l_qseq, (int32_t)bam_cigar2qlen(c, bam1_cigar(b)));
+				Rprintf("Line %ld, sequence length %i vs %i from CIGAR\n",(long)fp->n_lines, c->l_qseq, (int32_t)bam_cigar2qlen(c, bam1_cigar(b)));
 			  parse_error(fp->n_lines, "CIGAR and sequence length are inconsistent");
 			}
 			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2) + doff;

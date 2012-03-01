@@ -3,7 +3,7 @@
  *
  * 	Created on:	17.06.2011
  *  Author: 	Wolfgang Kaisers
- *	Content:	Header File for R package rbamtools
+ *	Content:	C Header File for R package rbamtools
  */
 
 #ifndef rbamtools_h
@@ -15,7 +15,6 @@
 #include <Rinternals.h>
 #include <Rdefines.h>
 #include <R_ext/PrtUtil.h>
-
 #include "samtools/bam.h"
 #include "samtools/sam.h"
 #include "align_list.h"
@@ -32,7 +31,6 @@ static void finalize_bam_writer(SEXP ptr);
 SEXP bam_writer_open(SEXP pReader,SEXP pFilename);
 SEXP bam_writer_save_align(SEXP pWriter, SEXP pAlign);
 SEXP bam_writer_close(SEXP pWriter);
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // BamReader
@@ -76,46 +74,46 @@ SEXP bam_range_insert_pre_curr_align(SEXP pRange,SEXP pAlign);
 // BamAlignment
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 static void finalize_bam_align(SEXP pAlign);
-SEXP bam_alignment_get_name(SEXP pAlign);
-SEXP bam_alignment_get_refid(SEXP pAlign);
-SEXP bam_alignment_get_position(SEXP pAlign);
-SEXP bam_alignment_get_cigar_df(SEXP pAlign);
-SEXP bam_alignment_get_mate_refid(SEXP pAlign);
-SEXP bam_alignment_get_mate_position(SEXP pAlign);
-SEXP bam_alignment_get_insert_size(SEXP pAlign);
-SEXP bam_alignment_get_map_quality(SEXP pAlign);
-SEXP bam_alignment_get_read_bases(SEXP pAlign);
-SEXP bam_alignment_get_qualities(SEXP pAlign);
+SEXP bam_align_get_name(SEXP pAlign);
+SEXP bam_align_get_refid(SEXP pAlign);
+SEXP bam_align_get_position(SEXP pAlign);
+SEXP bam_align_get_cigar_df(SEXP pAlign);
+SEXP bam_align_get_mate_refid(SEXP pAlign);
+SEXP bam_align_get_mate_position(SEXP pAlign);
+SEXP bam_align_get_insert_size(SEXP pAlign);
+SEXP bam_align_get_map_quality(SEXP pAlign);
+SEXP bam_align_get_read_bases(SEXP pAlign);
+SEXP bam_align_get_qualities(SEXP pAlign);
 
 ///////////////////////////////////////////////////////////
 // alignment flags
 
 // Reading accessors
-SEXP bam_alignment_is_paired(SEXP pAlign);//
-SEXP bam_alignment_mapped_in_proper_pair(SEXP pAlign);//
-SEXP bam_alignment_is_unmapped(SEXP pAlign);//
-SEXP bam_alignment_mate_is_unmapped(SEXP pAlign);//
-SEXP bam_alignment_strand_reverse(SEXP pAlign);//
-SEXP bam_alignment_mate_strand_reverse(SEXP pAlign);//
-SEXP bam_alignment_is_first_in_pair(SEXP pAlign);//
-SEXP bam_alignment_is_second_in_pair(SEXP pAlign);//
-SEXP bam_alignment_is_secondary_align(SEXP pAlign);
-SEXP bam_alignment_fail_qc(SEXP pAlign);//
-SEXP bam_alignment_is_pcr_or_optical_dup(SEXP pAlign);//
-SEXP bam_alignment_get_flag(SEXP pAlign);
+SEXP bam_align_is_paired(SEXP pAlign);//
+SEXP bam_align_mapped_in_proper_pair(SEXP pAlign);//
+SEXP bam_align_is_unmapped(SEXP pAlign);//
+SEXP bam_align_mate_is_unmapped(SEXP pAlign);//
+SEXP bam_align_strand_reverse(SEXP pAlign);//
+SEXP bam_align_mate_strand_reverse(SEXP pAlign);//
+SEXP bam_align_is_first_in_pair(SEXP pAlign);//
+SEXP bam_align_is_second_in_pair(SEXP pAlign);//
+SEXP bam_align_is_secondary_align(SEXP pAlign);
+SEXP bam_align_fail_qc(SEXP pAlign);//
+SEXP bam_align_is_pcr_or_optical_dup(SEXP pAlign);//
+SEXP bam_align_get_flag(SEXP pAlign);
 
 // Writing accessors
-SEXP bam_alignment_set_is_paired(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_mapped_in_proper_pair(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_is_unmapped(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_mate_is_unmapped(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_strand_reverse(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_mate_strand_reverse(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_is_first_in_pair(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_is_second_in_pair(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_is_secondary_align(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_fail_qc(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_is_pcr_or_optical_dup(SEXP pAlign, SEXP val);
-SEXP bam_alignment_set_flag(SEXP pAlign, SEXP val);
+SEXP bam_align_set_is_paired(SEXP pAlign, SEXP val);
+SEXP bam_align_set_mapped_in_proper_pair(SEXP pAlign, SEXP val);
+SEXP bam_align_set_is_unmapped(SEXP pAlign, SEXP val);
+SEXP bam_align_set_mate_is_unmapped(SEXP pAlign, SEXP val);
+SEXP bam_align_set_strand_reverse(SEXP pAlign, SEXP val);
+SEXP bam_align_set_mate_strand_reverse(SEXP pAlign, SEXP val);
+SEXP bam_align_set_is_first_in_pair(SEXP pAlign, SEXP val);
+SEXP bam_align_set_is_second_in_pair(SEXP pAlign, SEXP val);
+SEXP bam_align_set_is_secondary_align(SEXP pAlign, SEXP val);
+SEXP bam_align_set_fail_qc(SEXP pAlign, SEXP val);
+SEXP bam_align_set_is_pcr_or_optical_dup(SEXP pAlign, SEXP val);
+SEXP bam_align_set_flag(SEXP pAlign, SEXP val);
 
 #endif
