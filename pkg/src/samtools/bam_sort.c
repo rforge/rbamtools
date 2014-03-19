@@ -12,11 +12,12 @@
 #include "ksort.h"
 #include <R.h>
 
-// All "static" declarations removed (wk).
+// All "static" declarations removed (wk)
 
 int g_is_by_qname = 0;
 
-inline int strnum_cmp(const char *a, const char *b)
+
+static R_INLINE int strnum_cmp(const char *a, const char *b)
 {
 	char *pa, *pb;
 	pa = (char*)a; pb = (char*)b;
@@ -269,6 +270,7 @@ int bam_merge_core(int by_qname, const char *out, const char *headers, int n, ch
 	return 0;
 }
 
+/*
 int bam_merge(int argc, char *argv[])
 {
 	int c, is_by_qname = 0, flag = 0, ret = 0;
@@ -314,10 +316,11 @@ int bam_merge(int argc, char *argv[])
 	free(fn_headers);
 	return ret;
 }
+*/
 
 typedef bam1_t *bam1_p;
 
-inline int bam1_lt(const bam1_p a, const bam1_p b)
+static R_INLINE int bam1_lt(const bam1_p a, const bam1_p b)
 {
 	if (g_is_by_qname) {
 		int t = strnum_cmp(bam1_qname(a), bam1_qname(b));
@@ -384,7 +387,7 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 	fp = strcmp(fn, "-")? bam_open(fn, "r") : bam_dopen(fileno(stdin), "r");
 	if (fp == 0) {
 		// REP: fprintf(stderr, "[bam_sort_core] fail to open file %s\n", fn);
-		Rprintf("[bam_sort_core] fail to open file %s\n", fn);
+		Rprintf("[bam_sort_core_ext] fail to open file %s\n", fn);
 		return;
 	}
 	header = bam_header_read(fp);
@@ -403,12 +406,12 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 	}
 	if (ret != -1)
 		//REP: fprintf(stderr, "[bam_sort_core] truncated file. Continue anyway.\n");
-		Rprintf("[bam_sort_core] truncated file. Continue anyway.\n");
+		Rprintf("[bam_sort_core_ext] truncated file. Continue anyway.\n");
 	if (n == 0) sort_blocks(-1, k, buf, prefix, header, is_stdout);
 	else { // then merge
 		char **fns, *fnout;
 		// REP: fprintf(stderr, "[bam_sort_core] merging from %d files...\n", n+1);
-		Rprintf("[bam_sort_core] merging from %d files...\n", n+1);
+		Rprintf("[bam_sort_core_ext] merging from %d files...\n", n+1);
 		sort_blocks(n++, k, buf, prefix, header, 0);
 		fnout = (char*)calloc(strlen(prefix) + 20, 1);
 // REP:	if (is_stdout) sprintf(fnout, "-");

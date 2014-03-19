@@ -27,9 +27,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <zlib.h>
-#ifdef _USE_KNETFILE
-#include "knetfile.h"
-#endif
+#include <R.h>
+//#ifdef _USE_KNETFILE
+//#include "knetfile.h"
+//#endif
 
 //typedef int8_t bool;
 
@@ -134,7 +135,20 @@ int bgzf_check_bgzf(const char *fn);
 }
 #endif
 
-static inline int bgzf_getc(BGZF *fp)
+
+/*
+ * Moved this from bgzf.c here because of implicit declaration problem
+ */
+#if defined(_WIN32) || defined(_MSC_VER)
+#define ftello(fp) ftell(fp)
+#define fseeko(fp, offset, whence) fseek(fp, offset, whence)
+#else
+extern off_t ftello(FILE *stream);
+extern int fseeko(FILE *stream, off_t offset, int whence);
+#endif
+
+
+static R_INLINE int bgzf_getc(BGZF *fp)
 {
 	int c;
 	if (fp->block_offset >= fp->block_length) {

@@ -31,9 +31,9 @@ extern int fseeko(FILE *stream, off_t offset, int whence);
 #define razf_seek(fp, offset, whence) fseeko(fp, offset, whence)
 #define razf_tell(fp) ftello(fp)
 #endif
-#ifdef _USE_KNETFILE
-#include "knetfile.h"
-#endif
+//#ifdef _USE_KNETFILE
+//#include "knetfile.h"
+//#endif
 
 struct __faidx_t {
 	RAZF *rz;
@@ -46,7 +46,7 @@ struct __faidx_t {
 #define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 #endif
 
-static inline void fai_insert_index(faidx_t *idx, const char *name, int len, int line_len, int line_blen, uint64_t offset)
+static R_INLINE void fai_insert_index(faidx_t *idx, const char *name, int len, int line_len, int line_blen, uint64_t offset)
 {
 	khint_t k;
 	int ret;
