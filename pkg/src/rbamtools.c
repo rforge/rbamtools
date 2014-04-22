@@ -1429,6 +1429,7 @@ SEXP gap_site_ll_init()
 	return list;
 }
 
+
 SEXP gap_site_ll_fetch(SEXP pReader, SEXP pIndex, SEXP pRefid, SEXP pStart, SEXP pEnd)
 {
 	if(TYPEOF(pReader)!=EXTPTRSXP)
@@ -1463,11 +1464,11 @@ SEXP gap_site_ll_fetch(SEXP pReader, SEXP pIndex, SEXP pRefid, SEXP pStart, SEXP
 		refid=INTEGER(pRefid)[i];
 		begin=INTEGER(pStart)[i];
 		end  =INTEGER(pEnd)  [i];
-		sl->refid=refid;
+		sl->refid= (unsigned) refid;
 
 		if(refid<0 || refid>=(reader->header->n_targets))
 			error("[gap_site_ll_fetch] refid out of range!");
-		if(begin<0 || begin>=end || end>(reader->header->target_len[refid]))
+		if(begin<0 || begin>=end || end> (int)(reader->header->target_len[refid]))
 			error("[gap_site_ll_fetch] Begin or end out of range!");
 		bam_fetch(reader->x.bam,index,refid,begin,end,(void*)sl,gap_site_list_fetch_func);
 		if(sl->size>0)
@@ -1476,6 +1477,35 @@ SEXP gap_site_ll_fetch(SEXP pReader, SEXP pIndex, SEXP pRefid, SEXP pStart, SEXP
 
 	SEXP list;
 	PROTECT(list=R_MakeExternalPtr( (void*)(l),R_NilValue,R_NilValue));
+	R_RegisterCFinalizer(list,finialize_gap_site_ll);
+	UNPROTECT(1);
+	return list;
+}
+
+SEXP gap_site_ll_copy(SEXP pGapList)
+{
+	site_ll *src, *trg;
+	site_list *l, *ins;
+	SEXP list;
+
+	if(TYPEOF(pGapList)!=EXTPTRSXP)
+		error("[gap_site_ll_copy] pGapList must be external pointer!");
+	src=(site_ll*)(R_ExternalPtrAddr(pGapList));
+	trg=site_ll_init();
+
+	if(src->size>0)
+	{
+		site_ll_set_curr_first(src);
+		l=site_ll_get_curr_site_list_pp(src);
+		while(l!=0)
+		{
+			ins=site_list_copy(l);
+			site_ll_add_site_list(trg,ins);
+			l=site_ll_get_curr_site_list_pp(src);
+		}
+	}
+
+	PROTECT(list=R_MakeExternalPtr( (void*)(trg),R_NilValue,R_NilValue));
 	R_RegisterCFinalizer(list,finialize_gap_site_ll);
 	UNPROTECT(1);
 	return list;
@@ -4534,6 +4564,7 @@ void R_init_rbamtools(DllInfo *info)
 			 */
 			{ "gap_site_ll_init",					(DL_FUNC) &gap_site_ll_init,					0},
 			{ "gap_site_ll_fetch",					(DL_FUNC) &gap_site_ll_fetch,					5},
+			{ "gap_site_ll_copy",					(DL_FUNC) &gap_site_ll_copy,					1},
 			{ "gap_site_ll_get_df",					(DL_FUNC) &gap_site_ll_get_df,					2},
 			{ "gap_site_ll_get_size",   			(DL_FUNC) &gap_site_ll_get_size,    			1},
 			{ "gap_site_ll_get_nAligns",			(DL_FUNC) &gap_site_ll_get_nAligns,  			1},

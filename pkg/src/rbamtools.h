@@ -132,6 +132,7 @@ SEXP bitmask_r_zip(SEXP lhs, SEXP rhs);
 static void finialize_gap_site_ll(SEXP ptr);
 SEXP gap_site_ll_init();
 SEXP gap_site_ll_fetch(SEXP pReader, SEXP pIndex, SEXP pRefid, SEXP pStart, SEXP pEnd);
+SEXP gap_site_ll_copy(SEXP pGapList);
 SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames);
 SEXP gap_site_ll_get_size(SEXP pGapList);
 SEXP gap_site_ll_get_nAligns(SEXP pGapList);

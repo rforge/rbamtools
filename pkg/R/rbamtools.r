@@ -1548,6 +1548,12 @@ setClass("gapList",representation(list="externalptr"),
 
 setMethod(f="initialize","gapList",definition=function(.Object,reader,coords,verbose=FALSE){
   
+  if(missing(reader))
+  {
+    .Object@list<-.Call("create_gap_list",PACKAGE="rbamtools")
+    return(.Object)
+  }
+  
   if(!is(reader,"bamReader"))
   {
     cat("[initialize.gapList] Class of reader: ",class(reader),".\n")
@@ -1592,7 +1598,10 @@ setClass("gapSiteList",representation(list="externalptr"),
 
 setMethod(f="initialize","gapSiteList",definition=function(.Object,reader,coords){
   if(missing(reader) || missing(coords))
-    return(.Object)
+  {
+    .Object@list <- .Call("create_gap_site_list",PACKAGE="rbamtools")
+    return(.Object) 
+  }
   
   if(!is(reader,"bamReader"))
     stop("[gapSiteList.initialize] reader must be an instance of bamReader!\n")
@@ -1650,6 +1659,7 @@ setMethod(f="initialize","bamGapList",definition=function(.Object,reader){
   if(missing(reader))
   {
     .Object@list<-.Call("gap_site_ll_init")
+    .Object@refdata<-data.frame(ID=integer(0),SN=character(0),LN=integer(0),start=integer(0))
     return(.Object)
   }
   
@@ -1692,43 +1702,64 @@ setMethod("show","bamGapList",function(object){
   return(invisible())
 })
 
-summary.bamGapList<-function(object,...)
-{ return(merge(object@refdata,.Call("gap_site_ll_get_summary_df",object@list))) }
+summary.bamGapList<-function(object, ...)
+{ return(merge(object@refdata, .Call("gap_site_ll_get_summary_df", object@list, PACKAGE="rbamtools"))) }
 
-merge.bamGapList<-function(x,y,...)
+merge.bamGapList<-function(x, y, ...)
 {
-  if(!is(y,"bamGapList"))
+  if(!is(y, "bamGapList"))
     stop("[merge.bamGapList] y must be bamGapList!")
-  if(size(x)==0)
-    stop("[merge.bamGapList] size(x)==0!")
-  if(size(y)==0)
-    stop("[merge.bamGapList] size(y)==0!")
-  mref<-merge(x@refdata,y@refdata,by="SN",all=T)
   
-  n<-dim(mref)[1]
-  .Call("gap_site_ll_set_curr_first",x@list)
-  .Call("gap_site_ll_set_curr_first",y@list)
-  res<-new("bamGapList")
+  # Maybe both are empty
+  if(size(x) == 0)
+  {
+    # Both lists are empty -> return empty list
+    if(size(y) == 0)
+      return(new("bamGapList"))
+    res<-new("bamGapList")
+    res@refdata <- y@refdata
+    res@list <- .Call("gap_site_ll_copy", y@list, PACKAGE="rbamtools")
+    return(res)
+  }
+  
+  # Maybe y is empty
+  if(size(y) == 0)
+  {
+    res<-new("bamGapList")
+    res@refdata <- x@refdata
+    res@list <- .Call("gap_site_ll_copy", x@list, PACKAGE="rbamtools")
+    return(res)
+  }
+    
+  # Both lists are not empty
+  mref <- merge(x@refdata, y@refdata, by="SN", all = T)
+  
+  n <- dim(mref)[1]
+  .Call("gap_site_ll_set_curr_first",x@list,PACKAGE="rbamtools")
+  .Call("gap_site_ll_set_curr_first",y@list,PACKAGE="rbamtools")
+  res <- new("bamGapList")
   for(i in 1:n)
   {
     if(is.na(mref$ID.x[i]))
     {
-      .Call("gap_site_ll_add_curr_pp",y@list,res@list,as.integer(i-1))
+      .Call("gap_site_ll_add_curr_pp", y@list, res@list, as.integer(i-1))
       # copy values from .y to .x side (for later use in ref)
-      mref[i,2:4]<-mref[i,5:7]
+      mref[i, 2:4] <- mref[i, 5:7]
     }
     else if(is.na(mref$ID.y[i]))
-      .Call("gap_site_ll_add_curr_pp",x@list,res@list,as.integer(i-1))
+      .Call("gap_site_ll_add_curr_pp", x@list, res@list, as.integer(i-1),
+            PACKAGE="rbamtools")
     else
-      .Call("gap_site_ll_add_merge_pp",x@list,y@list,res@list,as.integer(i-1))
+      .Call("gap_site_ll_add_merge_pp",x@list, y@list, res@list,
+            as.integer(i-1), PACKAGE="rbamtools")
   }
   
   # get l-part of refdata
-  ref<-mref[,1:4]
-  names(ref)<-c("SN","ID","LN","start")
+  ref <- mref[,1:4]
+  names(ref) <- c("SN","ID","LN","start")
   # reset ID to new values  
-  ref$ID<-0:(n-1)
-  res@refdata<-ref
+  ref$ID <- 0:(n - 1)
+  res@refdata <- ref
   return(res)
 }
 
