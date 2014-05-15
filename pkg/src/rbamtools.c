@@ -16,8 +16,10 @@
 #define rbamtools_c
 #include "rbamtools.h"
 
-static const size_t  buf_size=2048; // buffer size for printing ints into chars
-static const int    ibuf_size=2048;	// Same buffer size for fgets
+/* buffer size for printing ints into chars */
+static const size_t  buf_size=2048;
+/* Same buffer size for fgets */
+static const int    ibuf_size=2048;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
@@ -92,9 +94,9 @@ static const unsigned char FASTQ_LETTERS[256] = {
 
 
 
-static R_INLINE void clear_buf(char *c,unsigned n)
+static R_INLINE void clear_buf(char *c,size_t n)
 {
-	unsigned i;
+	size_t i;
 	for(i=0;i<n;++i)
 		c[i]=(char)0;
 }
@@ -102,9 +104,9 @@ static R_INLINE void clear_buf(char *c,unsigned n)
 static R_INLINE void set_flag(bam1_t *align,_Bool val,unsigned pattern)
 {
 	if(val)
-		align->core.flag=(align->core.flag) | pattern;
+		align->core.flag= (short unsigned int) ((align->core.flag) | pattern);
 	else
-		align->core.flag=(align->core.flag) & !pattern;
+		align->core.flag= (short unsigned int) ((align->core.flag) & !pattern);
 }
 
 static R_INLINE size_t cigar2str(char *c,const bam1_t *align)
@@ -144,19 +146,20 @@ static R_INLINE uint8_t *alloc_align_data(bam1_t *b, int size)
 	if (b->m_data < size) {
 		b->m_data = size;
 		kroundup32(b->m_data);
-		b->data = (uint8_t*)realloc(b->data, b->m_data);
+		b->data = (uint8_t*)realloc(b->data, (size_t) b->m_data);
 	}
 	return b->data;
 }
 
 void print_bitmask_dec(bitmap_type *value)
 {
-	int i,last_block;
+	int i;
+	unsigned last_block;
 
 	last_block=bitmap_size-1;
-	Rprintf("%3u",getByte(*value,last_block));
-	for(i=last_block-1;i>=0;--i)
-		Rprintf(" | %3u",getByte(*value,i));
+	Rprintf("%3u",(unsigned) getByte(*value,last_block));
+	for(i=((int)last_block)-1;i>=0;--i)
+		Rprintf(" | %3u",(unsigned) getByte(*value,(unsigned)i));
 	Rprintf("\n");
 }
 
@@ -299,7 +302,7 @@ SEXP bam_reader_get_ref_data(SEXP pReader)
 {
 	samfile_t *reader;
 	bam_header_t *header;
-	int nProtected, nCols, nRows, t,i;
+	int nProtected, nCols, nRows, i;
 	SEXP dflist, RefID_vector, RefName_vector, RefLength_vector;
 	SEXP col_names, row_names;
     char c[20];
@@ -333,7 +336,7 @@ SEXP bam_reader_get_ref_data(SEXP pReader)
 	{
 		INTEGER(RefID_vector)[i]=i;
 		SET_STRING_ELT(RefName_vector,i,mkChar(header->target_name[i]));
-		INTEGER(RefLength_vector)[i]=header->target_len[i];
+		INTEGER(RefLength_vector)[i]=(int) header->target_len[i];
 	}
 	SET_VECTOR_ELT(dflist,0,RefID_vector);
 	SET_VECTOR_ELT(dflist,1,RefName_vector);
@@ -516,7 +519,7 @@ SEXP bam_reader_sort_file(SEXP pFilename,SEXP pPrefix,SEXP pMaxMem,SEXP pByName)
 
 	filename=CHAR(STRING_ELT(pFilename,0));
 	prefix=CHAR(STRING_ELT(pPrefix,0));
-	max_mem=*REAL(pMaxMem);
+	max_mem=(size_t) *REAL(pMaxMem);
 	sort_by_name =*(LOGICAL(AS_LOGICAL(pByName)));
 	if(sort_by_name)
 	{
@@ -594,11 +597,12 @@ SEXP bam_reader_write_fastq(SEXP pReader,SEXP pFilename,SEXP pAppend)
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	unsigned char *raw_seq;
-	int32_t seq_len;
-	int buf_size=2048, nuc_val;
+	int nuc_val;
 	char *buf=R_alloc(buf_size,sizeof(char));
 	uint8_t *quals;
-	unsigned i=0,j;
+	unsigned i=0;
+
+	size_t j,seq_len, buf_size=2048; /* Redefinition because of resizing */
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	samfile_t *reader=(samfile_t*)(R_ExternalPtrAddr(pReader));
@@ -608,7 +612,7 @@ SEXP bam_reader_write_fastq(SEXP pReader,SEXP pFilename,SEXP pAppend)
 	while(res>=0)
 	{
 		// Read Sequence
-		seq_len=align->core.l_qseq;
+		seq_len=(size_t) align->core.l_qseq;
 		if(seq_len>buf_size)
 		{
 			buf_size=2*seq_len;
@@ -635,7 +639,7 @@ SEXP bam_reader_write_fastq(SEXP pReader,SEXP pFilename,SEXP pAppend)
 		for(j=0;j<seq_len;++j)
 		{
 			// Ensure that printed character is in range
-			quals[j]= (quals[j]<0 ? 0 : quals[j]);
+			/* quals[j]= (quals[j]<0 ? 0 : quals[j]); // skipped because quals is unsigned */
 			quals[j]= (quals[j]>93 ? 93 : quals[j]);
 			buf[j]=(char) (quals[j]+33);
 		}
@@ -650,7 +654,7 @@ SEXP bam_reader_write_fastq(SEXP pReader,SEXP pFilename,SEXP pAppend)
 
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=i;
+	INTEGER(ans)[0]=(int) i;
 	UNPROTECT(1);
 	return ans;
 }
@@ -676,7 +680,7 @@ SEXP bam_reader_write_fastq_index(SEXP pReader,SEXP pFilename,SEXP pWhichCopy,SE
 	 *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	unsigned nCheck=INTEGER(pWhichCopy)[LENGTH(pWhichCopy)-1];
+	int nCheck=INTEGER(pWhichCopy)[LENGTH(pWhichCopy)-1];
 	_Bool append =*(LOGICAL(AS_LOGICAL(pAppend)));
 
 	gzFile gz;
@@ -692,11 +696,13 @@ SEXP bam_reader_write_fastq_index(SEXP pReader,SEXP pFilename,SEXP pWhichCopy,SE
 	 * char buffer for copying sequence and qualities.
 	 */
 	unsigned char *raw_seq;
-	int32_t seq_len;
-	int buf_size=2048,nuc_val;
+	size_t seq_len,j;
+	int nuc_val;
 	char *buf=R_alloc(buf_size,sizeof(char));
 	uint8_t *quals;
-	unsigned nWritten=0,j,nChecked=0;
+	int nChecked=0;
+	unsigned nWritten=0;
+	size_t buf_size=2048; /* Redefinition because of possible resizing */
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 */
@@ -711,7 +717,7 @@ SEXP bam_reader_write_fastq_index(SEXP pReader,SEXP pFilename,SEXP pWhichCopy,SE
 		{
 
 			// read sequence
-			seq_len=align->core.l_qseq;
+			seq_len=(size_t) align->core.l_qseq;
 			if(seq_len>buf_size)
 			{
 				buf_size=2*seq_len;
@@ -738,7 +744,7 @@ SEXP bam_reader_write_fastq_index(SEXP pReader,SEXP pFilename,SEXP pWhichCopy,SE
 			for(j=0;j<seq_len;++j)
 			{
 				// Ensure that printed character is in range
-				quals[j]= (quals[j]<0 ? 0 : quals[j]);
+				/* quals[j]= (quals[j]<0 ? 0 : quals[j]); // skipped because quals is unsigned */
 				quals[j]= (quals[j]>93 ? 93 : quals[j]);
 				buf[j]=(char) (quals[j]+33);
 			}
@@ -757,8 +763,8 @@ SEXP bam_reader_write_fastq_index(SEXP pReader,SEXP pFilename,SEXP pWhichCopy,SE
 
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,2));
-	INTEGER(ans)[0]=nWritten;
-	INTEGER(ans)[1]=nChecked;
+	INTEGER(ans)[0]=(int) nWritten;
+	INTEGER(ans)[1]=(int) nChecked;
 	UNPROTECT(1);
 	return ans;
 }
@@ -841,7 +847,7 @@ SEXP gap_list_fetch(SEXP pReader,SEXP pIndex,SEXP pCoords)
 
 	if(refid<0 || refid >=(reader->header->n_targets))
 		error("[gap_list_fetch] refid out of range!\n");
-	if(begin<0 || begin>=end || end>(reader->header->target_len[refid]))
+	if(begin<0 || begin>=end || end>((int) (reader->header->target_len[refid])))
 		error("[gap_list_fetch] Begin or end out of range!\n");
 
 
@@ -868,7 +874,7 @@ SEXP gap_list_get_df(SEXP pGapList)
 	SEXP dflist;
 	PROTECT(dflist=allocVector(VECSXP,nCols));
 	++nProtected;
-	int nRows=(l->size);
+	int nRows=(int) (l->size);
 	int i;
 	unsigned *pos_data;
 
@@ -923,15 +929,15 @@ SEXP gap_list_get_df(SEXP pGapList)
 	for(i=0;i<nRows;++i)
 	{
 		pos_data=l->curr_el->pos_data;
-		INTEGER(ref_vector)        		[i]=pos_data[0];
-		INTEGER(pos_vector)        		[i]=pos_data[1];
-		INTEGER(left_cigar_len_vector)	[i]=pos_data[2];
-		INTEGER(left_cigar_type_vector)	[i]=pos_data[3];
-		INTEGER(left_stop_vector)  		[i]=pos_data[4];
-		INTEGER(gap_len_vector)			[i]=pos_data[5];
-		INTEGER(right_start_vector)		[i]=pos_data[6];
-		INTEGER(right_cigar_len_vector)	[i]=pos_data[7];
-		INTEGER(right_cigar_type_vector)[i]=pos_data[8];
+		INTEGER(ref_vector)        		[i]=(int) pos_data[0];
+		INTEGER(pos_vector)        		[i]=(int) pos_data[1];
+		INTEGER(left_cigar_len_vector)	[i]=(int) pos_data[2];
+		INTEGER(left_cigar_type_vector)	[i]=(int) pos_data[3];
+		INTEGER(left_stop_vector)  		[i]=(int) pos_data[4];
+		INTEGER(gap_len_vector)			[i]=(int) pos_data[5];
+		INTEGER(right_start_vector)		[i]=(int) pos_data[6];
+		INTEGER(right_cigar_len_vector)	[i]=(int) pos_data[7];
+		INTEGER(right_cigar_type_vector)[i]=(int) pos_data[8];
 		l->curr_el=l->curr_el->next_el;
 	}
 
@@ -1019,7 +1025,6 @@ SEXP gap_list_get_df(SEXP pGapList)
     PROTECT(row_names=allocVector(STRSXP,nRows));
     ++nProtected;
 
-	int buf_size=128;
 	char *buf=(char*) calloc(buf_size,sizeof(char));
     for(i=0;i<nRows;++i)
     {
@@ -1041,7 +1046,7 @@ SEXP gap_list_get_size(SEXP pGapList)
 	gap_list *l=(gap_list*)(R_ExternalPtrAddr(pGapList));
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->size);
+	INTEGER(ans)[0]=(int) (l->size);
 	UNPROTECT(1);
 	return ans;
 }
@@ -1054,7 +1059,7 @@ SEXP gap_list_get_nAligns(SEXP pGapList)
 	gap_list *l=(gap_list*)(R_ExternalPtrAddr(pGapList));
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->nAligns);
+	INTEGER(ans)[0]=(int) (l->nAligns);
 	UNPROTECT(1);
 	return ans;
 }
@@ -1066,7 +1071,7 @@ SEXP gap_list_get_nAlignGaps(SEXP pGapList)
 	gap_list *l=(gap_list*)(R_ExternalPtrAddr(pGapList));
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->nAlignGaps);
+	INTEGER(ans)[0]=(int)(l->nAlignGaps);
 	UNPROTECT(1);
 	return ans;
 }
@@ -1128,11 +1133,11 @@ SEXP gap_site_list_fetch(SEXP pReader,SEXP pIndex,SEXP pCoords)
 
 	if(refid<0 || refid >=(reader->header->n_targets))
 		error("[gap_site_list_fetch] refid out of range!\n");
-	if(begin<0 || begin>=end || end>(reader->header->target_len[refid]))
+	if(begin<0 || begin>=end || end>((int)(reader->header->target_len[refid])))
 		error("[gap_site_list_fetch] Begin or end out of range!\n");
 
 	site_list *l=site_list_init();
-	l->refid=refid;
+	l->refid=(unsigned) refid;
 	bam_fetch(reader->x.bam,index,refid,begin,end,(void*)l,gap_site_list_fetch_func);
 
 	SEXP list;
@@ -1145,96 +1150,117 @@ SEXP gap_site_list_fetch(SEXP pReader,SEXP pIndex,SEXP pCoords)
 
 SEXP gap_site_list_get_df(SEXP pGapList)
 {
+	SEXP dflist;
+	SEXP row_names;
+	SEXP id_vector;
+	SEXP refid_vector;
+	SEXP lstart_vector;
+	SEXP lend_vector;
+	SEXP rstart_vector;
+	SEXP rend_vector;
+	SEXP gap_len_vector;
+	SEXP nAligns_vector;
+	SEXP nProbes_vector;
+	SEXP nlstart_vector;
+	SEXP qsm_vector;
+	SEXP nmcl_vector;
+	SEXP mcl_vector;
+
+	site_list *l;
+	site_list_element *el,*curr;
+
+	int nProtected;
+	int nCols;
+	int nRows;
+	int i;
+
 	if(TYPEOF(pGapList)!=EXTPTRSXP)
 		error("[get_gap_list_df] No external pointer!");
 
-	site_list *l=(site_list*)(R_ExternalPtrAddr(pGapList));
+	l=(site_list*)(R_ExternalPtrAddr(pGapList));
 
 	// create data.frame
-	int nProtected=0;
-	int nCols=13;
-	SEXP dflist;
+	nProtected=0;
+	nCols=13;
+
 	PROTECT(dflist=allocVector(VECSXP,nCols));
 	++nProtected;
-	int nRows=(l->size);
-	int i;
+	nRows=(int)(l->size);
+
 
 	/* Column 0: id												*/
-	SEXP id_vector;
 	PROTECT(id_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	// Column 1: refid											*/
-	SEXP refid_vector;
+
 	PROTECT(refid_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 2: lstart											*/
-	SEXP lstart_vector;
+
 	PROTECT(lstart_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 3: lend											*/
-	SEXP lend_vector;
+
 	PROTECT(lend_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 4: rstart											*/
-	SEXP rstart_vector;
+
 	PROTECT(rstart_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 5: rend											*/
-	SEXP rend_vector;
+
 	PROTECT(rend_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 6: gap_len										*/
-	SEXP gap_len_vector;
+
 	PROTECT(gap_len_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 7: nAligns										*/
-	SEXP nAligns_vector;
+
 	PROTECT(nAligns_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 8: nProbes										*/
-	SEXP nProbes_vector;
+
 	PROTECT(nProbes_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 9: nlstart										*/
-	SEXP nlstart_vector;
+
 	PROTECT(nlstart_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 10: sum_left_cigar								*/
-	SEXP qsm_vector;
+
 	PROTECT(qsm_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 11: lcl											*/
-	SEXP nmcl_vector;
+
 	PROTECT(nmcl_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 	/* Column 12: mcl											*/
-	SEXP mcl_vector;
+
 	PROTECT(mcl_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 
-
 	/* start position											*/
-	site_list_element *el,*curr;
 	curr=l->curr;
 	site_list_set_curr_first(l);
 
 	for(i=0;i<nRows;++i)
 	{
 		el=site_list_get_curr_pp(l);
-		INTEGER(id_vector)                  [i]=i+1;
-		INTEGER(refid_vector)        		[i]=l->refid;
+		INTEGER(id_vector)                  [i]=(int) i+1;
+		INTEGER(refid_vector)        		[i]=(int) l->refid;
 		/* lend - max(left_cigar_len)+1							*/
-		INTEGER(lstart_vector)        		[i]=el->lend-getByte(el->lcl,0)+1;
-		INTEGER(lend_vector)	            [i]=el->lend;
-		INTEGER(rstart_vector)	            [i]=el->rstart;
-		INTEGER(rend_vector)  		        [i]=el->rstart+el->r_cigar_size-1;
-		INTEGER(gap_len_vector)			    [i]=el->gap_len;
-		INTEGER(nAligns_vector)		        [i]=el->nAligns;
-		INTEGER(nProbes_vector)             [i]=el->nProbes;
-		INTEGER(nlstart_vector)	            [i]=bitmask_nPos(el->lcl);
-		INTEGER(qsm_vector)					[i]=bitmask_sumPos(el->lcl);
-		INTEGER(nmcl_vector)				[i]=el->lcl;
-		INTEGER(mcl_vector)					[i]=el->mcl;
+		INTEGER(lstart_vector)        		[i]=(int) el->lend-getByte(el->lcl,0)+1;
+		INTEGER(lend_vector)	            [i]=(int) el->lend;
+		INTEGER(rstart_vector)	            [i]=(int) el->rstart;
+		INTEGER(rend_vector)  		        [i]=(int) (((unsigned int)el->rstart)+el->r_cigar_size-1);
+		INTEGER(gap_len_vector)			    [i]=(int) el->gap_len;
+		INTEGER(nAligns_vector)		        [i]=(int) el->nAligns;
+		INTEGER(nProbes_vector)             [i]=(int) el->nProbes;
+		INTEGER(nlstart_vector)	            [i]=(int) bitmask_nPos(el->lcl);
+		INTEGER(qsm_vector)					[i]=(int) bitmask_sumPos(el->lcl);
+		INTEGER(nmcl_vector)				[i]=(int) el->lcl;
+		INTEGER(mcl_vector)					[i]=(int) el->mcl;
 	}
 	/* Reset curr position										*/
 	l->curr=curr;
@@ -1279,11 +1305,9 @@ SEXP gap_site_list_get_df(SEXP pGapList)
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Row Names
 	 */
-	SEXP row_names;
     PROTECT(row_names=allocVector(STRSXP,nRows));
     ++nProtected;
 
-    int buf_size=128;
     char *buf=(char*) calloc(buf_size,sizeof(char));
     for(i=0;i<nRows;++i)
     {
@@ -1305,7 +1329,7 @@ SEXP gap_site_list_get_ref_id(SEXP pGapList)
 	site_list *l=(site_list*)(R_ExternalPtrAddr(pGapList));
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->refid);
+	INTEGER(ans)[0]=(int)(l->refid);
 	UNPROTECT(1);
 	return ans;
 }
@@ -1318,7 +1342,7 @@ SEXP gap_site_list_get_size(SEXP pGapList)
 	site_list *l=(site_list*)(R_ExternalPtrAddr(pGapList));
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->size);
+	INTEGER(ans)[0]=(int)(l->size);
 	UNPROTECT(1);
 	return ans;
 }
@@ -1331,7 +1355,7 @@ SEXP gap_site_list_get_nAligns(SEXP pGapList)
 	site_list *l=(site_list*)(R_ExternalPtrAddr(pGapList));
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->nAligns);
+	INTEGER(ans)[0]=(int)(l->nAligns);
 	UNPROTECT(1);
 	return ans;
 }
@@ -1344,7 +1368,7 @@ SEXP gap_site_list_get_nAlignGaps(SEXP pGapList)
 	site_list *l=(site_list*)(R_ExternalPtrAddr(pGapList));
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->nAlignGaps);
+	INTEGER(ans)[0]=(int)(l->nAlignGaps);
 	UNPROTECT(1);
 	return ans;
 }
@@ -1360,7 +1384,7 @@ SEXP gap_site_list_merge(SEXP pLhs, SEXP pRhs, SEXP pRef)
 
 	site_list *lhs=(site_list*)(R_ExternalPtrAddr(pLhs));
 	site_list *rhs=(site_list*)(R_ExternalPtrAddr(pRhs));
-	site_list *mrg=site_list_merge(lhs,rhs,INTEGER(pRef)[0]);
+	site_list *mrg=site_list_merge(lhs,rhs,(unsigned) INTEGER(pRef)[0]);
 
 	SEXP list;
 	PROTECT(list=R_MakeExternalPtr( (void*)(mrg),R_NilValue,R_NilValue));
@@ -1399,7 +1423,7 @@ SEXP bitmask_r_zip(SEXP lhs, SEXP rhs)
 	PROTECT(res=allocVector(INTSXP,len));
 	int i;
 	for(i=0;i<len;++i)
-		INTEGER(res)[i]=r_zip_val(INTEGER(lhs)[i],INTEGER(rhs)[i]);
+		INTEGER(res)[i]=(int) r_zip_val((bitmap_type) INTEGER(lhs)[i],(bitmap_type) INTEGER(rhs)[i]);
 
 	UNPROTECT(1);
 	return(res);
@@ -1513,15 +1537,19 @@ SEXP gap_site_ll_copy(SEXP pGapList)
 
 SEXP gap_site_ll_set_curr_first(SEXP pGapList)
 {
+	site_ll *sll;
 	if(TYPEOF(pGapList)!=EXTPTRSXP)
 		error("[gap_site_ll_set_curr_first] pGapList must be external pointer!");
-	site_ll *sll=(site_ll*)(R_ExternalPtrAddr(pGapList));
+	sll=(site_ll*)(R_ExternalPtrAddr(pGapList));
 	site_ll_set_curr_first(sll);
 	return R_NilValue;
 }
 
 SEXP gap_site_ll_add_curr_pp(SEXP pSrc,SEXP pTrg,SEXP pRefid)
 {
+	site_ll *src, *trg;
+	site_list *l,*ins;
+
 	if(TYPEOF(pSrc)!=EXTPTRSXP)
 		error("[gap_site_ll_add_curr_pp] pSrc must be external pointer!");
 	if(TYPEOF(pTrg)!=EXTPTRSXP)
@@ -1529,12 +1557,12 @@ SEXP gap_site_ll_add_curr_pp(SEXP pSrc,SEXP pTrg,SEXP pRefid)
 	if(TYPEOF(pRefid)!=INTSXP)
 		error("[gap_site_ll_add_curr_pp] pRefid must be Integer!");
 
-	site_ll *src=(site_ll*)(R_ExternalPtrAddr(pSrc));
-	site_ll *trg=(site_ll*)(R_ExternalPtrAddr(pTrg));
-	site_list *l=site_ll_get_curr_site_list_pp(src);
+	src=(site_ll*)(R_ExternalPtrAddr(pSrc));
+	trg=(site_ll*)(R_ExternalPtrAddr(pTrg));
+	l=site_ll_get_curr_site_list_pp(src);
 
-	site_list *ins=site_list_copy(l);
-	ins->refid=INTEGER(pRefid)[0];
+	ins=site_list_copy(l);
+	ins->refid=(unsigned) INTEGER(pRefid)[0];
 	site_ll_add_site_list(trg,ins);
 
 	return R_NilValue;
@@ -1542,6 +1570,9 @@ SEXP gap_site_ll_add_curr_pp(SEXP pSrc,SEXP pTrg,SEXP pRefid)
 
 SEXP gap_site_ll_add_merge_pp(SEXP plSrc,SEXP prSrc,SEXP pTrg,SEXP pRefid)
 {
+	unsigned refid;
+	site_ll *l_src, *r_src, *trg;
+
 	if(TYPEOF(plSrc)!=EXTPTRSXP)
 		error("[gap_site_ll_add_merge_pp] plSrc must be external pointer!");
 	if(TYPEOF(prSrc)!=EXTPTRSXP)
@@ -1551,53 +1582,52 @@ SEXP gap_site_ll_add_merge_pp(SEXP plSrc,SEXP prSrc,SEXP pTrg,SEXP pRefid)
 	if(TYPEOF(pRefid)!=INTSXP)
 		error("[gap_site_ll_add_merge_pp] pRefid must be Integer!");
 
-	unsigned refid=INTEGER(pRefid)[0];
+	refid=(unsigned) INTEGER(pRefid)[0];
 
-	site_ll *l_src=(site_ll*)(R_ExternalPtrAddr(plSrc));
-	site_ll *r_src=(site_ll*)(R_ExternalPtrAddr(prSrc));
-	site_ll *trg  =(site_ll*)(R_ExternalPtrAddr(pTrg));
+	l_src=(site_ll*)(R_ExternalPtrAddr(plSrc));
+	r_src=(site_ll*)(R_ExternalPtrAddr(prSrc));
+	trg  =(site_ll*)(R_ExternalPtrAddr(pTrg));
 
-	//Rprintf("[gap_site_ll_add_merge_pp] plSrc size: %u\tprSrc size: %u\tpTrg size: %u\trefid: %u\n",l_src->size,r_src->size,trg->size,refid);
 
-	// Get pointer to current site_list
+	/* Get pointer to current site_list */
 	site_list *ls=site_ll_get_curr_site_list_pp(l_src);
 	if(ls==0)
 		error("[gap_site_ll_add_merge_pp] l_src curr returned 0! Use 'set_curr_first' or check size>0!");
-	//Rprintf("[gap_site_ll_add_merge_pp] l_src size: %u\n",ls->size);
 	site_list *rs=site_ll_get_curr_site_list_pp(r_src);
 	if(rs==0)
 		error("[gap_site_ll_add_merge_pp] r_src curr returned 0! Use 'set_curr_first' or check size>0!");
-	//Rprintf("[gap_site_ll_add_merge_pp] r_src size: %u\n",rs->size);
 
-	// Do merging and add to target list
+
+	/* Do merging and add to target list */
 	site_list *l=site_list_merge(ls,rs,refid);
 	l->nAligns=ls->nAligns+rs->nAligns;
 	l->nAlignGaps=ls->nAlignGaps+rs->nAlignGaps;
 
 	site_ll_add_site_list(trg,l);
-	//Rprintf("[gap_site_ll_add_merge_pp] Adding site_list of size: %u\trefid: %u\n",l->size,l->refid);
 	return R_NilValue;
 }
 
 
 SEXP gap_site_ll_reset_refid(SEXP pGapList)
 {
+	SEXP res;
+	site_ll *sll;
+	site_list *l;
+	unsigned size,i;
+
 	if(TYPEOF(pGapList)!=EXTPTRSXP)
 		error("[gap_site_ll_reset_refid] No external pointer!");
-	site_ll *sll=(site_ll*)(R_ExternalPtrAddr(pGapList));
+	sll=(site_ll*)(R_ExternalPtrAddr(pGapList));
 
-	unsigned size=sll->size;
-	SEXP res;
+	size=sll->size;
 	PROTECT(res=allocVector(INTSXP,size));
 
-	site_list *l;
 	site_ll_set_curr_first(sll);
-	unsigned i;
 	for(i=0;i<size;++i)
 	{
 		l=site_ll_get_curr_site_list_pp(sll);
 		l->refid=i;
-		INTEGER(res)[i]=i;
+		INTEGER(res)[i]=(int)i;
 	}
 	UNPROTECT(1);
 	return(res);
@@ -1606,49 +1636,59 @@ SEXP gap_site_ll_reset_refid(SEXP pGapList)
 
 SEXP gap_site_ll_get_summary_df(SEXP pGapList)
 {
+	SEXP dflist;
+	SEXP refid_vector;
+	SEXP size_vector;
+	SEXP nalign_vector;
+	SEXP ngap_vector;
+	SEXP row_names;
+	SEXP col_names;
+
+	site_ll *sll;
+	site_list *l;
+
+	int nProtected;
+	unsigned nCols,nRows,i;
+	char *buf;
+
 	if(TYPEOF(pGapList)!=EXTPTRSXP)
 		error("[gap_site_ll_get_summary_df] No external pointer!");
-	site_ll *sll=(site_ll*)(R_ExternalPtrAddr(pGapList));
+	sll=(site_ll*)(R_ExternalPtrAddr(pGapList));
 
 	// create data.frame
-	int nProtected=0;
-	unsigned nCols=4;
-	unsigned nRows=sll->size;
+	nProtected=0;
+	nCols=4;
+	nRows=sll->size;
 
-	SEXP dflist;
+
 	PROTECT(dflist=allocVector(VECSXP,nCols));
 	++nProtected;
 
 	// Column 0: refid
-	SEXP refid_vector;
 	PROTECT(refid_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 
 	// Column 1: size
-	SEXP size_vector;
 	PROTECT(size_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 
 	// Column 2: nAligns
-	SEXP nalign_vector;
 	PROTECT(nalign_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 
 	// Column 3: nAlignGaps
-	SEXP ngap_vector;
 	PROTECT(ngap_vector=allocVector(INTSXP,nRows));
 	++nProtected;
 
-	site_list *l;
+
 	site_ll_set_curr_first(sll);
-	unsigned i;
 	for(i=0;i<nRows;++i)
 	{
 		l=site_ll_get_curr_site_list_pp(sll);
-		INTEGER(refid_vector) [i]=l->refid;
-		INTEGER(size_vector)  [i]=l->size;
-		INTEGER(nalign_vector)[i]=l->nAligns;
-		INTEGER(ngap_vector)  [i]=l->nAlignGaps;
+		INTEGER(refid_vector) [i]=(int) l->refid;
+		INTEGER(size_vector)  [i]=(int) l->size;
+		INTEGER(nalign_vector)[i]=(int) l->nAligns;
+		INTEGER(ngap_vector)  [i]=(int) l->nAlignGaps;
 	}
 
 	SET_VECTOR_ELT(dflist, 0,refid_vector);
@@ -1659,7 +1699,6 @@ SEXP gap_site_ll_get_summary_df(SEXP pGapList)
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Column Names
 	 */
-	SEXP col_names;
 	PROTECT(col_names=allocVector(STRSXP,nCols));
 	++nProtected;
 
@@ -1670,12 +1709,11 @@ SEXP gap_site_ll_get_summary_df(SEXP pGapList)
 	setAttrib(dflist,R_NamesSymbol,col_names);
 
 	/* Row Names											*/
-	SEXP row_names;
+
     PROTECT(row_names=allocVector(STRSXP,nRows));
     ++nProtected;
 
-	int buf_size=128;
-	char *buf=(char*) calloc(buf_size,sizeof(char));
+	buf=(char*) calloc(buf_size,sizeof(char));
     for(i=0;i<nRows;++i)
     {
     	sprintf(buf,"%i",i);
@@ -1702,7 +1740,7 @@ SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames)
 	int nProtected=0;
 	unsigned nCols=13;
 	unsigned nRefs=sll->size;
-	unsigned nRows=sum_ll_sizes(sll);
+	unsigned nRows=(unsigned) sum_ll_sizes(sll);
 
 	SEXP dflist;
 	PROTECT(dflist=allocVector(VECSXP,nCols));
@@ -1778,7 +1816,7 @@ SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames)
 	unsigned i,j,k=0;
 
 	/* Scaling factor: Maximum value for gqs is read-length			*/
-	unsigned smcl_denom=bitmap_size*nQsm;
+	int smcl_denom=(int) (bitmap_size*nQsm);
 
 	for(i=0;i<nRefs;++i)
 	{
@@ -1787,19 +1825,19 @@ SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames)
 		for(j=0;j<l->size;++j,++k)
 		{
 			el=site_list_get_curr_pp(l);
-			INTEGER(id_vector)                  [k]=k+1; 						/* row-id: should start with 1	*/
-			INTEGER(refid_vector)        		[k]=l->refid+1;
-			INTEGER(lstart_vector)        		[k]=el->lend-getByte(el->lcl,0)+1;
-			INTEGER(lend_vector)	            [k]=el->lend;
-			INTEGER(rstart_vector)	            [k]=el->rstart;
-			INTEGER(rend_vector)  		        [k]=el->rstart+el->r_cigar_size-1;
-			INTEGER(gap_len_vector)			    [k]=el->gap_len;
-			INTEGER(nAligns_vector)		        [k]=el->nAligns;
-			INTEGER(nProbes_vector)             [k]=el->nProbes;
-			INTEGER(nlstart_vector)	            [k]=bitmask_nPos(el->lcl);
-			INTEGER(qsm_vector)					[k]=getSmcl(el->mcl); 			/* smcl = sum of minimal cigar size	*/
-			INTEGER(nmcl_vector)				[k]=bitmask_nPos(el->mcl);
-			INTEGER(gqs_vector)                 [k]=INTEGER(nlstart_vector)[k]*INTEGER(qsm_vector)[k]*2*10/smcl_denom;
+			INTEGER(id_vector)                  [k]=(int) k+1; 						/* row-id: should start with 1	*/
+			INTEGER(refid_vector)        		[k]=(int) l->refid+1;
+			INTEGER(lstart_vector)        		[k]=(int) el->lend-getByte(el->lcl,0)+1;
+			INTEGER(lend_vector)	            [k]=(int) el->lend;
+			INTEGER(rstart_vector)	            [k]=(int) el->rstart;
+			INTEGER(rend_vector)  		        [k]=(int) (el->rstart+el->r_cigar_size-1);
+			INTEGER(gap_len_vector)			    [k]=(int) el->gap_len;
+			INTEGER(nAligns_vector)		        [k]=(int) el->nAligns;
+			INTEGER(nProbes_vector)             [k]=(int) el->nProbes;
+			INTEGER(nlstart_vector)	            [k]=(int) bitmask_nPos(el->lcl);
+			INTEGER(qsm_vector)					[k]=(int) getSmcl(el->mcl); 			/* smcl = sum of minimal cigar size	*/
+			INTEGER(nmcl_vector)				[k]=(int) bitmask_nPos(el->mcl);
+			INTEGER(gqs_vector)                 [k]=(int) (INTEGER(nlstart_vector)[k]*INTEGER(qsm_vector)[k]*2*10/smcl_denom);
 		}
 	}
 
@@ -1808,7 +1846,7 @@ SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames)
 	 */
 
 	SEXP levs;
-	int nLevels=LENGTH(pRefNames);
+	unsigned nLevels= (unsigned) LENGTH(pRefNames);
 	PROTECT(levs=allocVector(STRSXP,nLevels));
 	++nProtected;
 
@@ -1864,7 +1902,6 @@ SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames)
     PROTECT(row_names=allocVector(STRSXP,nRows));
     ++nProtected;
 
-	int buf_size=128;
 	char *buf=(char*) calloc(buf_size,sizeof(char));
     for(i=0;i<nRows;++i)
     {
@@ -1991,21 +2028,21 @@ SEXP bam_range_fetch(SEXP pReader,SEXP pIndex,SEXP pCoords,SEXP pComplex)
 
 	if(refid<0 || refid >=(reader->header->n_targets))
 		error("[bam_range_fetch] refid out of range!\n");
-	if(begin<0 || begin>=end || end>(reader->header->target_len[refid]))
+	if(begin<0 || begin>=end || end>((int)(reader->header->target_len[refid])))
 		error("[bam_range_fetch] Begin or end out of range!\n");
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Init align_list
 	 */
 	align_list *l=init_align_list();
-	l->range_begin=begin;
-	l->range_end=end;
-	l->seqid=refid;
+	l->range_begin= (long unsigned int) begin;
+	l->range_end= (long unsigned int) end;
+	l->seqid= (unsigned int) refid;
 	l->complex= (LOGICAL(pComplex)[0]==TRUE) ? 1 : 0;
 	
 	/* seqname and LN												*/
 	bam_header_t* header=reader->header;
-	int nchar = strlen(header->target_name[refid]);
+	size_t nchar = (size_t) strlen(header->target_name[refid]);
 	l->refname=calloc(nchar+1,sizeof(char));
 	strcpy(l->refname,header->target_name[refid]);
 	l->seq_LN=header->target_len[refid];
@@ -2085,7 +2122,7 @@ SEXP bam_count(SEXP pReader,SEXP pIndex,SEXP pCoords)
 
 	if(refid<0 || refid >=(reader->header->n_targets))
 		error("[bam_count] refid out of range!\n");
-	if(begin<0 || begin>=end || end>(reader->header->target_len[refid]))
+	if(begin<0 || begin>=end || end> ((int)(reader->header->target_len[refid])))
 		error("[bam_count] Begin or end out of range!\n");
 
 
@@ -2101,7 +2138,7 @@ SEXP bam_count(SEXP pReader,SEXP pIndex,SEXP pCoords)
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,10));
 	for(i=0;i<10;++i)
-		INTEGER(ans)[i]=count[i];
+		INTEGER(ans)[i]=(int) count[i];
 	UNPROTECT(1);
 	return ans;
 }
@@ -2216,8 +2253,8 @@ SEXP bam_range_get_align_df(SEXP pRange)
 	SEXP dflist;
 	PROTECT(dflist=allocVector(VECSXP,nCols));
 	++nProtected;
-	int nRows=(l->size);
-	int i,j,nuc_val;
+	int nRows=(int) (l->size);
+	int i,nuc_val;
 
 	/* Column 0: refid										*/
 	SEXP ref_vector;
@@ -2266,8 +2303,8 @@ SEXP bam_range_get_align_df(SEXP pRange)
 
 	/* seq+cigar											*/
 	unsigned char *raw_seq;
-	int32_t seq_len=l->max_seqlen+1;
-	char *buf=(char*) calloc(buf_size>seq_len ? buf_size : seq_len,sizeof(char));
+	size_t j,seq_len=((size_t)l->max_seqlen)+1;
+	char *buf=(char*) calloc( (buf_size>seq_len ? buf_size : seq_len) ,sizeof(char));
 
 	uint8_t *quals;
 
@@ -2290,7 +2327,7 @@ SEXP bam_range_get_align_df(SEXP pRange)
 
 
 		INTEGER(flag_vector)[i]=(align->core.flag);
-		seq_len=align->core.l_qseq;
+		seq_len= (size_t) (align->core.l_qseq);
 		raw_seq=bam1_seq(align);
 		for(j=0;j<seq_len;++j)
 		{
@@ -2311,7 +2348,7 @@ SEXP bam_range_get_align_df(SEXP pRange)
 		for(j=0;j<seq_len;++j)
 		{
 			// Ensure that printed character is in range
-			quals[j]= (quals[j]<0 ? 0 : quals[j]);
+			/* quals[j]= (quals[j]<0 ? 0 : quals[j]); // skipped because quals is unsigned*/
 			quals[j]= (quals[j]>93 ? 93 : quals[j]);
 			buf[j]=(char) (quals[j]+33);
 		}
@@ -2400,7 +2437,7 @@ SEXP bam_range_write(SEXP pWriter,SEXP pRange,SEXP pRefid)
 	{
 		align=get_next_align(l);
 		align->core.tid=INTEGER(pRefid)[0];
-		bytes_written+=samwrite(writer,align);
+		bytes_written+=(long unsigned int) samwrite(writer,align);
 		bam_destroy1(align);
 	}
 
@@ -2409,7 +2446,7 @@ SEXP bam_range_write(SEXP pWriter,SEXP pRange,SEXP pRefid)
 
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=bytes_written;
+	INTEGER(ans)[0]= (int) bytes_written;
 	UNPROTECT(1);
 	return ans;
 }
@@ -2430,7 +2467,7 @@ SEXP bam_range_get_size(SEXP pRange)
 	align_list *l=(align_list*)(R_ExternalPtrAddr(pRange));
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->size);
+	INTEGER(ans)[0]= (int) (l->size);
 	UNPROTECT(1);
 	return ans;
 }
@@ -2443,9 +2480,9 @@ SEXP bam_range_get_coords(SEXP pRange)
 
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,3));
-	INTEGER(ans)[0]=l->seqid;
-	INTEGER(ans)[1]=l->range_begin;
-	INTEGER(ans)[2]=l->range_end;
+	INTEGER(ans)[0]=(int) l->seqid;
+	INTEGER(ans)[1]=(int) l->range_begin;
+	INTEGER(ans)[2]=(int) l->range_end;
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Names
@@ -2470,13 +2507,13 @@ SEXP bam_range_get_params(SEXP pRange)
 
 	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,7));
-	INTEGER(ans)[0]=l->seqid;
-	INTEGER(ans)[1]=l->range_begin;
-	INTEGER(ans)[2]=l->range_end;
-	INTEGER(ans)[3]=l->complex;
-	INTEGER(ans)[4]=l->seq_LN;
-	INTEGER(ans)[5]=l->min_seqlen;
-	INTEGER(ans)[6]=l->max_seqlen;
+	INTEGER(ans)[0]=(int) l->seqid;
+	INTEGER(ans)[1]=(int) l->range_begin;
+	INTEGER(ans)[2]=(int) l->range_end;
+	INTEGER(ans)[3]=(int) l->complex;
+	INTEGER(ans)[4]=(int) l->seq_LN;
+	INTEGER(ans)[5]=(int) l->min_seqlen;
+	INTEGER(ans)[6]=(int) l->max_seqlen;
 
 	/* Names												*/
 	SEXP names_vec;
@@ -2520,8 +2557,11 @@ SEXP bam_range_get_align_range(SEXP pRange)
 		return R_NilValue;
 
 	const bam1_t * align;
-	unsigned long min_pos,max_end,i;
-	min_pos=0;
+	unsigned long i;
+	int32_t min_pos=0;
+	uint32_t max_end;
+
+
 	--(min_pos); /* Create big number as start value			*/
 	max_end=0;
 	uint32_t calend;
@@ -2539,19 +2579,19 @@ SEXP bam_range_get_align_range(SEXP pRange)
 	}
 	l->curr_el=curr_el;
 
-	SEXP ans;
 
+	SEXP ans;
 	PROTECT(ans=allocVector(INTSXP,2));
 
 	/* Returns minimum of position= 0-based position of leftmost match nucleotide	*/
-	INTEGER(ans)[0]=min_pos;
+	INTEGER(ans)[0]= (int) min_pos;
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * calend adds cigar shifts to position and thereby returns the
 	 * 0-based position of the first nucleotide after the last match
 	 * Returns the 0-based position of the rightmost match nucleotide
 	 */
-	INTEGER(ans)[1]=max_end-1;
+	INTEGER(ans)[1]= ((int)max_end) -1;
 
 	// + + + + + + + + + + + + + + + + + + + + + + + + + +
 	// Names
@@ -2604,6 +2644,8 @@ SEXP bam_range_pop_front(SEXP pRange)
 
 SEXP bam_range_write_fastq(SEXP pRange,SEXP pFilename,SEXP pAppend)
 {
+
+
 	if(TYPEOF(pRange)!=EXTPTRSXP)
 		error("[bam_range_write_fastq] No external pointer!");
 	if(TYPEOF(pFilename)!=STRSXP)
@@ -2631,22 +2673,23 @@ SEXP bam_range_write_fastq(SEXP pRange,SEXP pFilename,SEXP pAppend)
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * create buffer for sequence and qualities
+	 * buf_size redefined because possible resizing
 	 */
+	size_t seq_len,j,buf_size=2048;
+	unsigned long i,nRows;
+
 	unsigned char *raw_seq;
-	int32_t seq_len;
-	int buf_size=2048;
 	char *buf=(char*) calloc(buf_size,sizeof(char));
 	uint8_t *quals;
-	unsigned i=0,j;
-	int nRows=(l->size);
 
 
+	nRows=(l->size);
 	for(i=0;i<nRows;++i)
 	{
 		align=get_const_next_align(l);
 
 		/* read sequence									*/
-		seq_len=align->core.l_qseq;
+		seq_len=(size_t) align->core.l_qseq;
 		if(seq_len>buf_size)
 		{
 			buf_size=2*(seq_len+1);
@@ -2725,7 +2768,7 @@ SEXP bam_range_write_fastq_index(SEXP pRange,SEXP pFilename,SEXP pWhichCopy,SEXP
 	int i,j,nWritten=0;
 	int nCheck=INTEGER(pWhichCopy)[LENGTH(pWhichCopy)-1];
 
-	nCheck= ((l->size)<nCheck) ? (l->size) : nCheck;
+	nCheck= (((int)(l->size)) < nCheck) ? ((int)(l->size)) : nCheck;
 	//Rprintf("[bam_range_write_fastq_idx] Checking %u records.\n",nCheck);
 	for(i=1;i<=nCheck;++i)
 	{
@@ -2734,7 +2777,7 @@ SEXP bam_range_write_fastq_index(SEXP pRange,SEXP pFilename,SEXP pWhichCopy,SEXP
 		{
 			/* read sequence									*/
 			seq_len=align->core.l_qseq;
-			if(seq_len>bfs)
+			if(seq_len> ((int32_t)bfs))
 			{
 				bfs=2*( ((size_t)seq_len)+1);
 				free(buf);
@@ -4034,7 +4077,6 @@ SEXP copy_fastq_records(SEXP pInfile,SEXP pOutfile,SEXP pWhichCopy,SEXP pAppend)
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * create buffer for sequence and qualities
 	 */
-	unsigned buf_size=2048;
 	char *head,*seq,*qual,*buf;
 	head=(char*) calloc(buf_size,sizeof(char));
 	seq =(char*) calloc(buf_size,sizeof(char));
@@ -4238,7 +4280,6 @@ SEXP count_fastq(SEXP pInfile,SEXP pMaxCol)
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Create buffer for sequence and qualities
 	 */
-	unsigned buf_size=2048;
 	char *head,*seq,*qual,*iter;
 	head=(char*) calloc(buf_size,sizeof(char));
 	seq =(char*) calloc(buf_size,sizeof(char));
@@ -4353,6 +4394,17 @@ SEXP count_fastq(SEXP pInfile,SEXP pMaxCol)
 
 SEXP get_col_quantiles(SEXP pQuant, SEXP pDf)
 {
+
+	SEXP row_names;
+	SEXP col_names;
+	SEXP rQvec,wQvec;
+	SEXP dflist;
+	SEXP in_col_names;
+
+	int nwRows,nrRows, nCols;
+	int i,j,k,nProtected;
+	double val, *q;
+
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * pQuant is expected to contain unique
 	 * and ascending sorted values
@@ -4373,18 +4425,16 @@ SEXP get_col_quantiles(SEXP pQuant, SEXP pDf)
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Nr of Rows for writing = Nr of quantile values
 	 */
-	int nwRows=LENGTH(pQuant);
+	nwRows=LENGTH(pQuant);
 	/* Nr of Rows for reading = Nr of rows in pDf			*/
-	int nrRows=LENGTH(VECTOR_ELT(pDf,0));
+	nrRows=LENGTH(VECTOR_ELT(pDf,0));
 	/* Nr of Columns: equal in both data.frames				*/
-	int nCols=LENGTH(pDf);
-	double val, *q=REAL(pQuant);
+	nCols=LENGTH(pDf);
+	q=REAL(pQuant);
 
-	int i,j,k,nProtected=0;
+	nProtected=0;
 
 	/* read and write qual-vectors							*/
-	SEXP rQvec,wQvec;
-	SEXP dflist;
 	PROTECT(dflist=allocVector(VECSXP,nCols));
 	++nProtected;
 
@@ -4422,10 +4472,9 @@ SEXP get_col_quantiles(SEXP pQuant, SEXP pDf)
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Column names
 	 */
-	SEXP col_names;
 	PROTECT(col_names=allocVector(STRSXP,nCols));
 	++nProtected;
-	SEXP in_col_names=getAttrib(pDf,R_NamesSymbol);
+	in_col_names=getAttrib(pDf,R_NamesSymbol);
 
 	char *buf=(char*) calloc(buf_size,sizeof(char));
 	for(i=0;i<nCols;++i)
@@ -4438,7 +4487,6 @@ SEXP get_col_quantiles(SEXP pQuant, SEXP pDf)
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Row names
 	 */
-	SEXP row_names;
     PROTECT(row_names=allocVector(STRSXP,nwRows));
     ++nProtected;
 
@@ -4457,10 +4505,13 @@ SEXP get_col_quantiles(SEXP pQuant, SEXP pDf)
 
 SEXP count_text_lines(SEXP pInfile)
 {
+	FILE *fin;
+	SEXP res;
+
 	if(TYPEOF(pInfile)!=STRSXP)
 		error("[count_text_lines] pInfile must be a string!");
 
-	FILE *fin=fopen(CHAR(STRING_ELT(pInfile,0)),"r");
+	fin=fopen(CHAR(STRING_ELT(pInfile,0)),"r");
 	if(fin==NULL)
 		error("[copy_fastq_records] Infile does not exist!");
 
@@ -4477,7 +4528,7 @@ SEXP count_text_lines(SEXP pInfile)
 	free(buf);
 	--lines;
 
-	SEXP res;
+
 	PROTECT(res=allocVector(INTSXP,1));
 	INTEGER(res)[0]=lines;
 	UNPROTECT(1);
