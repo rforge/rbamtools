@@ -28,7 +28,7 @@
 // 8 byte-sized fields are used
 // (Also used by gapSiteList)
 typedef unsigned long long  bitmap_type; 							// Size at least 64 bits (C99)
-const unsigned idx[]      ={0,8,16,24,32,40,48,56};
+const unsigned long long idx[]      ={0,8,16,24,32,40,48,56};
 const unsigned long  pat[]={
                            0xFF             , 0xFF00              , 0xFF0000          , 0xFF000000        ,
                            0xFF00000000     , 0xFF0000000000      , 0xFF000000000000  , 0xFF00000000000000
@@ -51,7 +51,7 @@ const unsigned max_bitmap_index=7;
 // 4 byte-sized fields are used
 // (Also used by gapSiteList)
 typedef unsigned long       bitmap_type;							// Size at least 32 bits (C99)
-const unsigned idx[]      ={0,8,16,24};
+const unsigned long idx[]      ={0,8,16,24};
 
 const unsigned long  pat[]={
                            0xFF             , 0xFF00              , 0xFF0000          , 0xFF000000
@@ -93,7 +93,7 @@ index_type bitmask_sumPos(const bitmap_type val)
 	index_type res=0;
 	unsigned i;
 	for(i=0;i<bitmap_size;++i)
-		res+=(val>>idx[i])&0xFF;
+		res+=(index_type)(val>>idx[i])&0xFF;
 	return res;
 }
 
@@ -218,7 +218,7 @@ void l_addVal(bitmap_type *map,const value_type val)
 			return;
 		if(val>byte_val)
 		{
-			l_insByte(map,val,block);
+			l_insByte(map,val,(index_type)block);
 			return;
 		}
 		--block;
@@ -532,13 +532,13 @@ static R_INLINE void l_zip(bitmap_type lhs, bitmap_type rhs, bitmap_type *res)
 	{
 		l_insByte(res,lByte,bitmap_size-1);
 		lblock=max_bitmap_index-1;
-		rblock=max_bitmap_index;
+		rblock=(int)max_bitmap_index;
 	}
 	else if(lByte<rByte)
 	{
 		l_insByte(res,rByte,bitmap_size-1);
 		rblock=max_bitmap_index-1;
-		lblock=max_bitmap_index;
+		lblock=(int)max_bitmap_index;
 	}
 	else
 	{

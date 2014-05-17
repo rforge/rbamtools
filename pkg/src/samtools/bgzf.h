@@ -106,7 +106,7 @@ int bgzf_write(BGZF* fp, const void* data, int length);
  * Return value is non-negative on success.
  * Returns -1 on error.
  */
-#define bgzf_tell(fp) ((fp->block_address << 16) | (fp->block_offset & 0xFFFF))
+#define bgzf_tell(fp) ((fp->block_address << 16) | ((int64_t)fp->block_offset & 0xFFFF))
 
 /*
  * Set the file to read from the location specified by pos, which must
@@ -134,19 +134,6 @@ int bgzf_check_bgzf(const char *fn);
 #ifdef __cplusplus
 }
 #endif
-
-
-/*
- * Moved this from bgzf.c here because of implicit declaration problem
- */
-#if defined(_WIN32) || defined(_MSC_VER)
-#define ftello(fp) ftell(fp)
-#define fseeko(fp, offset, whence) fseek(fp, offset, whence)
-#else
-extern off_t ftello(FILE *stream);
-extern int fseeko(FILE *stream, off_t offset, int whence);
-#endif
-
 
 static R_INLINE int bgzf_getc(BGZF *fp)
 {

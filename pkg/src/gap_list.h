@@ -180,10 +180,10 @@ void list_gaps(gap_list *l,const bam1_t* align)
 	int op;
 
 	cigar=bam1_cigar(align);
-	position=align->core.pos;
+	position=(uint32_t)align->core.pos;
 	n_cigar=align->core.n_cigar;
 
-	g.refid=align->core.tid;
+	g.refid=(unsigned) align->core.tid;
 	g.position=position;
 	// Count total Aligns
 	++(l->nAligns);

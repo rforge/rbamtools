@@ -8,6 +8,8 @@
  *	C99 standard: GCC C compiler / Debugging / Other debugging flags: -std=c99
  *	Gives some errors: bam_import.c: fileno, strdup not declared.
  *	Try: gnu99
+ *		Alternative: -std=c99 -D_GNU_SOURCE
+ *	If no -std option is specified, clang defaults to gnu99 mode.
  *
  *
  *

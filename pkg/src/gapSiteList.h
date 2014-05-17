@@ -85,14 +85,14 @@ static R_INLINE site_list_element* copy_site_list_element(const site_list_elemen
 	return el;
 }
 
-void static R_INLINE site_list_add_cs(struct site_list_element* el,sle_type lcl,index_type rcs,sle_type mcl)
+static R_INLINE void site_list_add_cs(struct site_list_element* el,sle_type lcl,index_type rcs,sle_type mcl)
 {
 	++(el->nAligns);
 	// Maximum of right cigar size
 	if(el->r_cigar_size<rcs)
 		el->r_cigar_size=rcs;
-	r_addVal(&(el->lcl),lcl);
-	r_addVal_f(&(el->mcl),mcl);
+	r_addVal(&(el->lcl), (value_type)lcl);
+	r_addVal_f(&(el->mcl),(value_type) mcl);
 }
 
 // static _inline_ void site_list_el_destroy(site_list_element* el) { free(el); }
@@ -549,7 +549,7 @@ void list_gap_sites(site_list *l,const bam1_t* align)
 
 	cigar    = bam1_cigar(align);
 	// Add size of first cigar to position to get 1-based left stop (BAM is 0-based)
-	position = align->core.pos + (cigar[0] >> BAM_CIGAR_SHIFT);
+	position =  ((uint32_t)align->core.pos) + (cigar[0] >> BAM_CIGAR_SHIFT);
 	n_cigar  = align->core.n_cigar;
 	op = cigar[0] & BAM_CIGAR_MASK;
 	if((op!= BAM_CMATCH))
@@ -573,7 +573,7 @@ void list_gap_sites(site_list *l,const bam1_t* align)
 		// Add size of first cigar to position to get *1-based* left stop
 		// BAM is *0-based*
 		// position always points to *1-based* last nucleotide of active cigar item
-		position = align->core.pos + (cigar[0] >> BAM_CIGAR_SHIFT);
+		position =  ((uint32_t)align->core.pos) + (cigar[0] >> BAM_CIGAR_SHIFT);
 
 		for(i=1;i<(n_cigar-1);++i)
 		{
@@ -616,9 +616,9 @@ void list_gap_sites(site_list *l,const bam1_t* align)
 						lend,							// lend
 						rstart,							// rstart
 						gap_len,						// gap_len
-						left_len,						// lcl
+						(unsigned char) left_len,		// lcl
 						right_len,						// rcs
-						min_mtc                         // mcl
+						(unsigned char) min_mtc         // mcl
 						);
 
 				// next cigar can also be processed because we know it's an M

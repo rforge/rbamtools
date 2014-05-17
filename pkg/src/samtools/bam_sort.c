@@ -270,7 +270,6 @@ int bam_merge_core(int by_qname, const char *out, const char *headers, int n, ch
 	return 0;
 }
 
-/*
 int bam_merge(int argc, char *argv[])
 {
 	int c, is_by_qname = 0, flag = 0, ret = 0;
@@ -316,7 +315,6 @@ int bam_merge(int argc, char *argv[])
 	free(fn_headers);
 	return ret;
 }
-*/
 
 typedef bam1_t *bam1_p;
 
@@ -324,8 +322,8 @@ static R_INLINE int bam1_lt(const bam1_p a, const bam1_p b)
 {
 	if (g_is_by_qname) {
 		int t = strnum_cmp(bam1_qname(a), bam1_qname(b));
-		return (t < 0 || (t == 0 && (((uint64_t)a->core.tid<<32|(a->core.pos+1)) < ((uint64_t)b->core.tid<<32|(b->core.pos+1)))));
-	} else return (((uint64_t)a->core.tid<<32|(a->core.pos+1)) < ((uint64_t)b->core.tid<<32|(b->core.pos+1)));
+		return (t < 0 || (t == 0 && (((uint64_t)a->core.tid<<32|((uint64_t)a->core.pos+1)) < ((uint64_t)b->core.tid<<32|((uint64_t)b->core.pos+1)))));
+	} else return (((uint64_t)a->core.tid<<32|((uint64_t)a->core.pos+1)) < ((uint64_t)b->core.tid<<32|((uint64_t)b->core.pos+1)));
 }
 KSORT_INIT(sort, bam1_p, bam1_lt)
 
@@ -334,7 +332,7 @@ void sort_blocks(int n, int k, bam1_p *buf, const char *prefix, const bam_header
 	char *name, mode[3];
 	int i;
 	bamFile fp;
-	ks_mergesort(sort, k, buf, 0);
+	ks_mergesort(sort, ((size_t) k), buf, 0);
 	name = (char*)calloc(strlen(prefix) + 20, 1);
 	if (n >= 0) {
 		sprintf(name, "%s.%.4d.bam", prefix, n);
@@ -343,14 +341,16 @@ void sort_blocks(int n, int k, bam1_p *buf, const char *prefix, const bam_header
 		sprintf(name, "%s.bam", prefix);
 		strcpy(mode, "w");
 	}
-//Rep:	fp = is_stdout? bam_dopen(fileno(stdout), mode) : bam_open(name, mode);
+	//Rep:	fp = is_stdout? bam_dopen(fileno(stdout), mode) : bam_open(name, mode);
 	// Instead:
+
+	if(is_stdout)
+		error("[sort_blocks.bam_sort.c] Output to stdout is not supported.");
 	fp = bam_open(name, mode);
 	if (fp == 0) {
-		// REP: fprintf(stderr, "[sort_blocks] fail to create file %s.\n", name);
 		Rprintf("[sort_blocks] fail to create file %s.\n", name);
 		free(name);
-		// FIXME: possible memory leak
+		// FIXME: possible memory leak (?? Valgrind seems to be ok for rbamtools)
 		return;
 	}
 	free(name);
@@ -386,7 +386,6 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 	n = k = 0; mem = 0;
 	fp = strcmp(fn, "-")? bam_open(fn, "r") : bam_dopen(fileno(stdin), "r");
 	if (fp == 0) {
-		// REP: fprintf(stderr, "[bam_sort_core] fail to open file %s\n", fn);
 		Rprintf("[bam_sort_core_ext] fail to open file %s\n", fn);
 		return;
 	}
@@ -397,7 +396,7 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 		if (buf[k] == 0) buf[k] = (bam1_t*)calloc(1, sizeof(bam1_t));
 		b = buf[k];
 		if ((ret = bam_read1(fp, b)) < 0) break;
-		mem += ret;
+		mem += (size_t) ret;
 		++k;
 		if (mem >= max_mem) {
 			sort_blocks(n++, k, buf, prefix, header, 0);
@@ -405,20 +404,18 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 		}
 	}
 	if (ret != -1)
-		//REP: fprintf(stderr, "[bam_sort_core] truncated file. Continue anyway.\n");
 		Rprintf("[bam_sort_core_ext] truncated file. Continue anyway.\n");
+
 	if (n == 0) sort_blocks(-1, k, buf, prefix, header, is_stdout);
 	else { // then merge
 		char **fns, *fnout;
-		// REP: fprintf(stderr, "[bam_sort_core] merging from %d files...\n", n+1);
+
 		Rprintf("[bam_sort_core_ext] merging from %d files...\n", n+1);
 		sort_blocks(n++, k, buf, prefix, header, 0);
 		fnout = (char*)calloc(strlen(prefix) + 20, 1);
-// REP:	if (is_stdout) sprintf(fnout, "-");
-// REP:	else sprintf(fnout, "%s.bam", prefix);
-// Instead:
+
 		sprintf(fnout, "%s.bam", prefix);
-		fns = (char**)calloc(n, sizeof(char*));
+		fns = (char**)calloc((size_t) n, sizeof(char*));
 		for (i = 0; i < n; ++i) {
 			fns[i] = (char*)calloc(strlen(prefix) + 20, 1);
 			sprintf(fns[i], "%s.%.4d.bam", prefix, i);
@@ -431,7 +428,7 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 		}
 		free(fns);
 	}
-	for (k = 0; k < max_mem / BAM_CORE_SIZE; ++k) {
+	for (k = 0; k < ((int)(max_mem / BAM_CORE_SIZE)); ++k) {
 		if (buf[k]) {
 			free(buf[k]->data);
 			free(buf[k]);

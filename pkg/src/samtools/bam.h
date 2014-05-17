@@ -134,7 +134,7 @@ void bam_destroy_header_hash(bam_header_t *header);
  * Describing how CIGAR operation/length is packed in a 32-bit integer.
  */
 #define BAM_CIGAR_SHIFT 4
-#define BAM_CIGAR_MASK  ((1 << BAM_CIGAR_SHIFT) - 1)
+#define BAM_CIGAR_MASK  ((uint32_t)((1 << BAM_CIGAR_SHIFT) - 1))
 
 /*
   CIGAR operations.
