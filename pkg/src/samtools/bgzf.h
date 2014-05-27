@@ -142,7 +142,7 @@ static R_INLINE int bgzf_getc(BGZF *fp)
 		if (bgzf_read_block(fp) != 0) return -2; /* error */
 		if (fp->block_length == 0) return -1; /* end-of-file */
 	}
-	c = ((unsigned char*)fp->uncompressed_block)[fp->block_offset++];
+	c = ((Bytef*)fp->uncompressed_block)[fp->block_offset++];
     if (fp->block_offset == fp->block_length) {
 #ifdef _USE_KNETFILE
         fp->block_address = knet_tell(fp->x.fpr);
