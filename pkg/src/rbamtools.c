@@ -121,19 +121,19 @@ static R_INLINE size_t cigar2str(char *c,const bam1_t *align)
 	len=align->core.n_cigar;
 	cigar=bam1_cigar(align);
 
-	sprintf(buf,"%lu",(unsigned long) (cigar[0] >> BAM_CIGAR_SHIFT));
+	sprintf(buf,"%lu",(unsigned long) BC_RIGHT_SHIFT(cigar[0])); //(cigar[0] >> BAM_CIGAR_SHIFT));
 	strcpy(c,buf);
-	if((cigar[0]&BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))	// Error
+	if((cigar[0] & BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))	// Error
 		return 0;
 	strncat(c,&(CIGAR_TYPES[cigar[0] & BAM_CIGAR_MASK]),1);
 
 
 	for(i=1;i<len;++i)
 	{
-		sprintf(buf,"%lu",(unsigned long) (cigar[i] >> BAM_CIGAR_SHIFT));
+		sprintf(buf,"%lu",(unsigned long) BC_RIGHT_SHIFT(cigar[i])); //(cigar[i] >> BAM_CIGAR_SHIFT));
 		strncat(c,buf,strlen(buf));
 
-		if((cigar[i]&BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))	// Error
+		if((cigar[i] & BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))	// Error
 			return 0;
 
 		strncat(c,&(CIGAR_TYPES[cigar[i] & BAM_CIGAR_MASK]),1);
@@ -3360,7 +3360,7 @@ SEXP bam_align_get_cigar_df(SEXP pAlign)
 		if((cigar[i]&BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))
 			error("[bam_align_getCigar_df] Cigar_type not in defined range!");
 
-		INTEGER(Length_vector)[i]=(int)(cigar[i] >> BAM_CIGAR_SHIFT);
+		INTEGER(Length_vector)[i]=(int) BC_RIGHT_SHIFT(cigar[i]); //(cigar[i] >> BAM_CIGAR_SHIFT);
 		SET_STRING_ELT(Type_vector,i,mkCharLen(CIGAR_TYPES+(cigar[i]&BAM_CIGAR_MASK),1));
 	}
 
@@ -3981,7 +3981,7 @@ SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 
 				/* goto next								*/
 				s = t + 1;
-				bam1_cigar(align)[i] = x << BAM_CIGAR_SHIFT | op;
+				bam1_cigar(align)[i] = BC_LEFT_SHIFT(x) | op; //x << BAM_CIGAR_SHIFT | op;
 			}
 			if(*s)
 				error("[bam_align_create] Unmatched CIGAR operation");

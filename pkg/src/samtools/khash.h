@@ -99,10 +99,11 @@ int main() {
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include <R.h>
+
+/* Settings for optional embedding into R*/
+#include "rdef.h"
 
 /* compipler specific configuration */
-
 #if UINT_MAX == 0xffffffffu
 typedef unsigned int khint32_t;
 #elif ULONG_MAX == 0xffffffffu

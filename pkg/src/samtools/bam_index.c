@@ -4,7 +4,7 @@
 #include "khash.h"
 #include "ksort.h"
 #include "bam_endian.h"
-#include <R.h>
+
 //#ifdef _USE_KNETFILE
 //#include "knetfile.h"
 //#endif
@@ -390,14 +390,26 @@ bam_index_t *bam_index_load_local(const char *_fn)
 {
 	FILE *fp;
 	char *fnidx, *fn;
+	size_t len;
 
 	if (strstr(_fn, "ftp://") == _fn || strstr(_fn, "http://") == _fn) {
 		const char *p;
 		int l = strlen(_fn);
 		for (p = _fn + l - 1; p >= _fn; --p)
 			if (*p == '/') break;
-		fn = strdup(p + 1);
-	} else fn = strdup(_fn);
+
+		//fn = str_dup(p + 1);
+		len = strlen(p + 1) + 1;
+		fn = malloc(len);
+		memcpy(fn,p + 1,len);
+	}
+	else
+	{
+		//fn = str_dup(_fn);
+		len = strlen(_fn) + 1;
+		fn  = malloc(len);
+		memcpy(fn,_fn,len);
+	}
 	fnidx = (char*)calloc(strlen(fn) + 5, 1);
 	strcpy(fnidx, fn); strcat(fnidx, ".bai");
 	fp = fopen(fnidx, "rb");
@@ -480,6 +492,8 @@ int bam_index_build2(const char *fn, const char *_fnidx)
 	FILE *fpidx;
 	bamFile fp;
 	bam_index_t *idx;
+	size_t len;
+
 	if ((fp = bam_open(fn, "r")) == 0) {
 		// REP: fprintf(stderr, "[bam_index_build2] fail to open the BAM file.\n");
 		Rprintf("[bam_index_build2] fail to open BAM file: '%s'\n",fn);
@@ -495,10 +509,16 @@ int bam_index_build2(const char *fn, const char *_fnidx)
 	if (_fnidx == 0) {
 		fnidx = (char*)calloc(strlen(fn) + 5, 1);
 		strcpy(fnidx, fn); strcat(fnidx, ".bai");
-	} else fnidx = strdup(_fnidx);
+	}
+	else
+	{
+		//fnidx = str_dup(_fnidx);
+		len = strlen(_fnidx) + 1;
+		fnidx = malloc(len);
+		memcpy(fnidx,_fnidx,len);
+	}
 	fpidx = fopen(fnidx, "wb");
 	if (fpidx == 0) {
-		// REP: fprintf(stderr, "[bam_index_build2] fail to create the index file.\n");
 		Rprintf("[bam_index_build2] fail to create the index file.\n");
 		free(fnidx);
 		return -1;

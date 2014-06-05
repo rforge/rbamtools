@@ -26,24 +26,12 @@
   2009-06-25 by lh3: optionally use my knetfile library to access file on a FTP.
   2009-06-12 by lh3: support a mode string like "wu" where 'u' for uncompressed output */
 
+
+#define _POSIX_C_SOURCE 200112L
+
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <R.h>
-#include "bgzf.h"
 
-#include "khash.h"
-typedef struct {
-	int size;
-	uint8_t *block;
-	int64_t end_offset;
-} cache_t;
-KHASH_MAP_INIT_INT64(cache, cache_t)
-
+/*
 #if defined(_WIN32) || defined(_MSC_VER)
 #define ftello(fp) ftell(fp)
 #define fseeko(fp, offset, whence) fseek(fp, offset, whence)
@@ -51,6 +39,25 @@ KHASH_MAP_INIT_INT64(cache, cache_t)
 extern off_t ftello(FILE *stream);
 extern int fseeko(FILE *stream, off_t offset, int whence);
 #endif
+*/
+
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include "bgzf.h"
+#include "khash.h"
+
+
+typedef struct {
+	int size;
+	uint8_t *block;
+	int64_t end_offset;
+} cache_t;
+KHASH_MAP_INIT_INT64(cache, cache_t)
+
 
 typedef int8_t bgzf_byte_t;
 

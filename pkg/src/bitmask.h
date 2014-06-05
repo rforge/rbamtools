@@ -14,9 +14,17 @@
 #ifndef BITMASK_H_
 #define BITMASK_H_
 
-// This checks whether this is compiled in 64 bit
+#include "samtools/rdef.h"
+#ifdef R_CRAN
 #include <R.h>
+#else
+#define R_INLINE inline
+#define Rprintf printf
+#endif
+
 #include <stdint.h>
+
+// This checks whether this is compiled in 64 bit
 #if UINTPTR_MAX == 0xffffffffffffffff
 #define BM_64
 #endif
@@ -43,7 +51,7 @@ const unsigned long rpat[]={
                            };
 
 const unsigned bitmap_size=8;
-const unsigned max_bitmap_index=7;
+const int max_bitmap_index=7;
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #else
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -64,7 +72,7 @@ const unsigned long rpat[]={
                            };
 
 const unsigned bitmap_size=4;
-const unsigned max_bitmap_index=3;
+const int max_bitmap_index=3;
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #endif
 

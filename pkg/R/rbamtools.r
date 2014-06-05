@@ -331,7 +331,7 @@ setMethod("reader2fastq","bamReader",function(object,filename,which,append=FALSE
     if(!is.numeric(which))
       stop("[reader2fastq] which argument must be numeric!")  
     ans<-.Call("bam_reader_write_fastq_index",object@reader,filename,as.integer(sort(unique(which))),append,PACKAGE="rbamtools")
-    if(ans<length(which))
+    if(ans[1]<length(which))
       cat("[reader2fastq] EOF reached.\n")
     cat("[reader2fastq]",ans,"records written.\n")
     return(invisible(ans))

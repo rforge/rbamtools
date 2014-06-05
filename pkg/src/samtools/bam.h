@@ -28,6 +28,10 @@
 #ifndef BAM_BAM_H
 #define BAM_BAM_H
 
+/* Settings for optional embedding into R*/
+#include "rdef.h"
+
+
 /*!
   @header
 
@@ -46,7 +50,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <R.h>
+/* defines optind and optarg */
+#include <getopt.h>
+
+#include "rdef.h"
 
 #ifndef BAM_LITE
 #define BAM_VIRTUAL_OFFSET16
@@ -70,6 +77,7 @@ typedef gzFile bamFile;
 #define bam_read(fp, buf, size) gzread(fp, buf, size)
 /* no bam_write/bam_tell/bam_seek() here */
 #endif
+
 
 /*! @typedef
   @abstract Structure for the alignment header.
@@ -134,7 +142,13 @@ void bam_destroy_header_hash(bam_header_t *header);
  * Describing how CIGAR operation/length is packed in a 32-bit integer.
  */
 #define BAM_CIGAR_SHIFT 4
-#define BAM_CIGAR_MASK  ((uint32_t)((1 << BAM_CIGAR_SHIFT) - 1))
+
+/* #define BAM_CIGAR_MASK (1 << BAM_CIGAR_SHIFT) - 1)*/
+#define BAM_CIGAR_MASK 15u
+
+#define BC_RIGHT_SHIFT(X) ((uint32_t) ((X)/16u))
+#define BC_LEFT_SHIFT(X) ((uint32_t) ((X)*16u))
+
 
 /*
   CIGAR operations.
@@ -709,7 +723,9 @@ extern "C" {
   @param  end  end of the region, 0-based
   @return      bin
  */
-static R_INLINE int bam_reg2bin(uint32_t beg, uint32_t end)
+
+/* Replace: return type changed from int to uint32_t */
+static R_INLINE uint32_t bam_reg2bin(uint32_t beg, uint32_t end)
 {
 	--end;
 	if (beg>>14 == end>>14) return 4681 + (beg>>14);
@@ -732,9 +748,9 @@ static R_INLINE bam1_t *bam_copy1(bam1_t *bdst, const bam1_t *bsrc)
 	int m_data = bdst->m_data;   // backup data and m_data
 	if (m_data < bsrc->data_len) { // double the capacity
 		m_data = bsrc->data_len; kroundup32(m_data);
-		data = (uint8_t*)realloc(data, m_data);
+		data = (uint8_t*)realloc(data, (size_t) m_data);
 	}
-	memcpy(data, bsrc->data, bsrc->data_len); // copy var-len data
+	memcpy(data, bsrc->data, (size_t) bsrc->data_len); // copy var-len data
 	*bdst = *bsrc; // copy the rest
 	// restore the backup
 	bdst->m_data = m_data;
@@ -753,8 +769,8 @@ static R_INLINE bam1_t *bam_dup1(const bam1_t *src)
 	b = bam_init1();
 	*b = *src;
 	b->m_data = b->data_len;
-	b->data = (uint8_t*)calloc(b->data_len, 1);
-	memcpy(b->data, src->data, b->data_len);
+	b->data = (uint8_t*)calloc((size_t) b->data_len, 1);
+	memcpy(b->data, src->data, (size_t) b->data_len);
 	return b;
 }
 
