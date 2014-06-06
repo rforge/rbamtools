@@ -213,6 +213,9 @@ typedef struct {
 typedef struct {
 	bam1_core_t core;
 	int l_aux, data_len, m_data;
+#ifdef BAM1_ADD_CIGAR
+	uint32_t *cigar;
+#endif
 	uint8_t *data;
 } bam1_t;
 
@@ -230,7 +233,18 @@ typedef struct __bam_iter_t *bam_iter_t;
   lower 4 bits gives a CIGAR operation and the higher 28 bits keep the
   length of a CIGAR.
  */
-#define bam1_cigar(b) ((uint32_t*)((b)->data + (b)->core.l_qname))
+
+
+#ifdef BAM1_ADD_CIGAR
+
+#define bam1_cigar(b) ((b)->cigar)
+#define bam1_data_cigar(b) ((b)->data + (b)->core.l_qname)
+
+#else
+
+#define bam1_cigar(b) ((b)->data + (b)->core.l_qname)
+
+#endif
 
 /*! @function
   @abstract  Get the name of the query
@@ -473,9 +487,25 @@ extern "C" {
 	  @abstract  Free the memory allocated for an alignment.
 	  @param  b  pointer to an alignment
 	 */
+
+
+#ifdef BAM1_ADD_CIGAR
+
+// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+// Additionally free extra copy of cigar data
+// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+#define bam_destroy1(b) do {					\
+		if (b) { free((b)->data); free((b)->cigar); free(b); }	\
+	} while (0)
+
+#else
+
 #define bam_destroy1(b) do {					\
 		if (b) { free((b)->data); free(b); }	\
 	} while (0)
+
+#endif
+
 
 	/*!
 	  @abstract       Format a BAM record in the SAM format
@@ -755,6 +785,15 @@ static R_INLINE bam1_t *bam_copy1(bam1_t *bdst, const bam1_t *bsrc)
 	// restore the backup
 	bdst->m_data = m_data;
 	bdst->data = data;
+
+#ifdef BAM1_ADD_CIGAR
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	// Fill additional cigar field with copy of cigar data
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	COPY_CIGAR_VALUES(bdst);
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+#endif
+
 	return bdst;
 }
 
@@ -771,6 +810,15 @@ static R_INLINE bam1_t *bam_dup1(const bam1_t *src)
 	b->m_data = b->data_len;
 	b->data = (uint8_t*)calloc((size_t) b->data_len, 1);
 	memcpy(b->data, src->data, (size_t) b->data_len);
+
+#ifdef BAM1_ADD_CIGAR
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	// Fill additional cigar field with copy of cigar data
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	COPY_CIGAR_VALUES(b);
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+#endif
+
 	return b;
 }
 

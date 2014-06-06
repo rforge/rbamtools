@@ -400,7 +400,6 @@ int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b)
 						*s++ = 'i'; *(int32_t*)s = (int32_t)x;
 						s += 4; doff += 5;
 						if (x < -2147483648ll)
-							// REP: fprintf(stderr, "Parse warning at line %lld: integer %lld is out of range.",(long long)fp->n_lines, x);
 							Rprintf("Parse warning at line %lld: integer %lld is out of range.",(long long)fp->n_lines, x);
 					}
 				} else {
@@ -414,7 +413,6 @@ int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b)
 						*s++ = 'I'; *(uint32_t*)s = (uint32_t)x;
 						s += 4; doff += 5;
 						if (x > 4294967295ll)
-							// REP: fprintf(stderr, "Parse warning at line %lld: integer %lld is out of range.",(long long)fp->n_lines, x);
 							Rprintf("Parse warning at line %lld: integer %lld is out of range.",(long long)fp->n_lines, x);
 					}
 				}
@@ -471,6 +469,17 @@ int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b)
 	}
 	b->l_aux = doff - doff0;
 	b->data_len = doff;
+
+
+#ifdef BAM1_ADD_CIGAR
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	// Fill additional cigar field with copy of cigar data
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	COPY_CIGAR_VALUES(b);
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+#endif
+
+
 	return z;
 }
 

@@ -36,13 +36,17 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <R.h>
+#include "samtools/bam.h"
+#include "samtools/sam.h"
+#include "samtools/rdef.h"
+
+// is already included via rdef.h
+//#include <R.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Rdynload.h> /* DllInfo	*/
-#include "samtools/bam.h"
-#include "samtools/sam.h"
+
 #include "align_list.h"
 #include "gap_list.h"
 

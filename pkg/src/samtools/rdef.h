@@ -12,6 +12,21 @@
 /* Turn R definition on and off */
 #define R_CRAN
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Change bam1_t related code in order to
+ * correct misaligns
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#define BAM1_ADD_CIGAR
+
+# define COPY_CIGAR_VALUES(b) 																				\
+		do																									\
+		{																									\
+				((b)->cigar=calloc((b)->core.n_cigar,sizeof(uint32_t)));									\
+				memcpy((b)->cigar,((b)->data + (b)->core.l_qname),(b)->core.n_cigar*sizeof(uint32_t));		\
+				}																							\
+		while(0)
+
+
 
 
 #ifdef R_CRAN
@@ -20,6 +35,7 @@
  * Library is compiled under R
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include <R.h>
+
 
 #else
 

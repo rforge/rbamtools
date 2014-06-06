@@ -68,6 +68,14 @@ static R_INLINE void copy_align(bam1_t *target,const bam1_t * const source)
 	free(target->data);
 	target->data=(uint8_t*)calloc((size_t)(target->data_len),1);
 	memcpy(target->data,source->data,(size_t)target->data_len);
+
+#ifdef BAM1_ADD_CIGAR
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	// Fill additional cigar field with copy of cigar data
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	COPY_CIGAR_VALUES(target);
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+#endif
 }
 
 static R_INLINE bam1_t *duplicate_align(const bam1_t *src)
@@ -78,6 +86,15 @@ static R_INLINE bam1_t *duplicate_align(const bam1_t *src)
 	b->m_data = b->data_len;
 	b->data = (uint8_t*)calloc((size_t)(b->data_len), 1);
 	memcpy(b->data, src->data, (size_t)(b->data_len));
+
+#ifdef BAM1_ADD_CIGAR
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	// Fill additional cigar field with copy of cigar data
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	COPY_CIGAR_VALUES(b);
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+#endif
+
 	return b;
 }
 
@@ -497,8 +514,8 @@ void count_align_depth (unsigned long *ald,unsigned long begin,unsigned long end
 	 * Add first cigar (must be match)
 	 *
 	 */
-	add_match_depth(ald,(long) begin,(long) end,position, BC_RIGHT_SHIFT(cigar[0])); // cigar[0]>>BAM_CIGAR_SHIFT);
-	position += (int32_t) BC_RIGHT_SHIFT(cigar[0]); //(cigar[0] >> BAM_CIGAR_SHIFT);
+	add_match_depth(ald,(long) begin,(long) end,position,cigar[0]>>BAM_CIGAR_SHIFT);
+	position += (int32_t) (cigar[0] >> BAM_CIGAR_SHIFT);
 
 	if(n_cigar>1)
 	{
@@ -512,7 +529,7 @@ void count_align_depth (unsigned long *ald,unsigned long begin,unsigned long end
 				 * N or D -> shift position
 				 * Rprintf("[count_align_depth] + + NorD + + pos: %lu\tlen: %u\n",position,cigar[i]>>BAM_CIGAR_SHIFT);
 				 */
-				position += (int32_t) BC_RIGHT_SHIFT(cigar[i]); //(cigar[i] >> BAM_CIGAR_SHIFT);
+				position += (int32_t) (cigar[i] >> BAM_CIGAR_SHIFT);
 
 			}
 			else if(op == BAM_CMATCH)
@@ -523,7 +540,7 @@ void count_align_depth (unsigned long *ald,unsigned long begin,unsigned long end
 				 */
 				add_match_depth(ald,(long) begin,(long) end,position,cigar[i]>>BAM_CIGAR_SHIFT);
 				/* position then points on rightmost nuc of exon */
-				position += (int32_t) BC_RIGHT_SHIFT(cigar[i]); //(cigar[i] >> BAM_CIGAR_SHIFT);
+				position += (int32_t) (cigar[i] >> BAM_CIGAR_SHIFT);
 			}
 			/* I: Do nothing */
 		}
@@ -531,7 +548,7 @@ void count_align_depth (unsigned long *ald,unsigned long begin,unsigned long end
 		 * Add last cigar (must be match)
 		 * Rprintf("[count_align_depth] pos: %lu\tlen: %u\n",position,cigar[i]>>BAM_CIGAR_SHIFT);
 		 */
-		add_match_depth(ald,(long) begin,(long) end,position, BC_RIGHT_SHIFT(cigar[i])); //cigar[i]>>BAM_CIGAR_SHIFT);
+		add_match_depth(ald,(long) begin,(long) end,position,cigar[i]>>BAM_CIGAR_SHIFT);
 	}
 }
 

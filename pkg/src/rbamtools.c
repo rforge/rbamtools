@@ -121,19 +121,19 @@ static R_INLINE size_t cigar2str(char *c,const bam1_t *align)
 	len=align->core.n_cigar;
 	cigar=bam1_cigar(align);
 
-	sprintf(buf,"%lu",(unsigned long) BC_RIGHT_SHIFT(cigar[0])); //(cigar[0] >> BAM_CIGAR_SHIFT));
+	sprintf(buf,"%lu",(unsigned long) (cigar[0] >> BAM_CIGAR_SHIFT));
 	strcpy(c,buf);
-	if((cigar[0] & BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))	// Error
+	if((cigar[0]&BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))	// Error
 		return 0;
 	strncat(c,&(CIGAR_TYPES[cigar[0] & BAM_CIGAR_MASK]),1);
 
 
 	for(i=1;i<len;++i)
 	{
-		sprintf(buf,"%lu",(unsigned long) BC_RIGHT_SHIFT(cigar[i])); //(cigar[i] >> BAM_CIGAR_SHIFT));
+		sprintf(buf,"%lu",(unsigned long) (cigar[i] >> BAM_CIGAR_SHIFT));
 		strncat(c,buf,strlen(buf));
 
-		if((cigar[i] & BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))	// Error
+		if((cigar[i]&BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))	// Error
 			return 0;
 
 		strncat(c,&(CIGAR_TYPES[cigar[i] & BAM_CIGAR_MASK]),1);
@@ -3357,10 +3357,14 @@ SEXP bam_align_get_cigar_df(SEXP pAlign)
 	uint32_t *cigar=bam1_cigar(align);
 	for(i=0;i<nRows;++i)
 	{
+		//Rprintf("[bam_align_getCigar_df] i: %i\tcigar[i]: \n",(cigar[i]&BAM_CIGAR_MASK));
 		if((cigar[i]&BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))
+		{
+			//Rprintf("[bam_align_getCigar_df] i: %i\tcigar[i]: \n",(cigar[i]&BAM_CIGAR_MASK));
 			error("[bam_align_getCigar_df] Cigar_type not in defined range!");
+		}
 
-		INTEGER(Length_vector)[i]=(int) BC_RIGHT_SHIFT(cigar[i]); //(cigar[i] >> BAM_CIGAR_SHIFT);
+		INTEGER(Length_vector)[i]=(int)(cigar[i] >> BAM_CIGAR_SHIFT);
 		SET_STRING_ELT(Type_vector,i,mkCharLen(CIGAR_TYPES+(cigar[i]&BAM_CIGAR_MASK),1));
 	}
 
@@ -3864,23 +3868,20 @@ SEXP bam_align_set_flag(SEXP pAlign, SEXP val)
 
 SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 {
+	// String-values:
+	// 1) query-name
+	// 2) query sequence
+	// 3) quality string
+	// 4) CIGAR string
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * String-values:
-	 * 1) query-name
-	 * 2) query sequence
-	 * 3) quality string
-	 * 4) CIGAR string
-	 *
-	 * Integer-values:
-	 * 1) refid
-	 * 2) position
-	 * 3) flag
-	 * 4) align quality
-	 * 5) mate refid
-	 * 6) mate position
-	 * 7) insert size
-	 */
+	// Integer-values:
+	// 1) refid
+	// 2) position
+	// 3) flag
+	// 4) align quality
+	// 5) mate refid
+	// 6) mate position
+	// 7) insert size
 
 	if(TYPEOF(pStrVals)!=STRSXP)
 		error("[bam_align_create] pStrVals must be string value!");
@@ -3899,8 +3900,8 @@ SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 
 	int32_t refid       	=INTEGER(pIntVals)[0];
 	int32_t position		=INTEGER(pIntVals)[1];
-	uint16_t flag			=(uint16_t)INTEGER(pIntVals)[2];
-	uint8_t align_qual		=(uint8_t) INTEGER(pIntVals)[3];
+	long flag				=INTEGER(pIntVals)[2];
+	uint32_t align_qual		=INTEGER(pIntVals)[3];
 	// mate
 	int32_t mate_refid		=INTEGER(pIntVals)[4];
 	int32_t mate_position	=INTEGER(pIntVals)[5];
@@ -3913,19 +3914,19 @@ SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 	bam1_core_t *c = &align->core;
 	uint8_t *p = 0;
 
+#ifndef BAM1_ADD_CIGAR
+	uint32_t *cigar_data;
+#endif
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * query name
-	 * uint8_t type of l_qname limits content to 254 characters
-	 */
-	c->l_qname =  (uint8_t)(strlen(qname) + 1);
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+	// query name
+	c->l_qname = strlen(qname) + 1;
 	memcpy(alloc_align_data(align, doff + c->l_qname) + doff, qname, c->l_qname);
 	doff += c->l_qname;
 
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * Set atomic fields
-	 */
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+	// Set atomic fields
 	c->flag = flag;
 	c->tid  = refid;
 	c->pos  = position;
@@ -3937,23 +3938,20 @@ SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 	c->isize=insert_size;
 
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * cigar
-	 */
-	{
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+	{ // cigar
 		char *s, *t;
-		int i; //, op;
-		//long x;
-		uint32_t op,x;
+		int i, op;
+		long x;
 		c->n_cigar = 0;
 
-		/* cigar[0]='*' checks for empty cigar				*/
+		// cigar[0]='*' checks for empty cigar
 		if (cigar[0] != '*')
 		{
-			/* check incoming string s and count n_cigar	*/
+			// check incoming string s and count n_cigar
 			for (s = (char*) cigar; *s; ++s)
 			{
-				/* *s must either be alpha or digit			*/
+				// *s must either be alpha or digit
 				if ((isalpha(*s)) || (*s=='='))
 					++c->n_cigar;
 				else if (!isdigit(*s))
@@ -3962,13 +3960,19 @@ SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 
 			align->data = alloc_align_data(align, doff + c->n_cigar * 4);
 
+#ifdef BAM1_ADD_CIGAR
+			align->cigar=calloc(c->n_cigar,sizeof(uint32_t));
+#else
+			cigar_data=calloc(c->n_cigar,sizeof(uint32_t));
+#endif
+
 			for (i=0, s= (char*)cigar; i != c->n_cigar; ++i)
 			{
-				/* convert string to integer							*/
-				/* t will then point to first non-digit position behind	*/
-				x = (uint32_t) strtol(s, &t, 10);
+				// convert string to integer
+				// t will then point to first non-digit position behind
+				x = strtol(s, &t, 10);
 				op = toupper(*t);
-				if 		(op == 'M') op = BAM_CMATCH;
+				if (op == 'M') op = BAM_CMATCH;
 				else if (op == 'I') op = BAM_CINS;
 				else if (op == 'D') op = BAM_CDEL;
 				else if (op == 'N') op = BAM_CREF_SKIP;
@@ -3979,59 +3983,82 @@ SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 				else if (op == 'X') op = BAM_CDIFF;
 				else error("[bam_align_create] invalid CIGAR operation!");
 
-				/* goto next								*/
+				// goto next
 				s = t + 1;
-				bam1_cigar(align)[i] = BC_LEFT_SHIFT(x) | op; //x << BAM_CIGAR_SHIFT | op;
+#ifdef BAM1_ADD_CIGAR
+				// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+				// Additional cigar field present
+				// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+				bam1_cigar(align)[i]=(uint32_t) ((x << BAM_CIGAR_SHIFT) | ((long)op));
+#else
+				//Rprintf("[bam_align_create] len: %i\t op: %i\t cigar: %i\n",x,i,x << BAM_CIGAR_SHIFT | op);
+				//Rprintf("[bam_align_create] a) i: %i\tcigar: %u\tcigar[i]: %u\n",i,bam1_cigar(align),bam1_cigar(align)[i]);
+				//bam1_cigar(align)[i] = (x << BAM_CIGAR_SHIFT) | ((long)op);
+				cigar_data[i] = (x << BAM_CIGAR_SHIFT) | ((long)op);
+				//Rprintf("[bam_align_create]    i: %i\tcigar_data[i]: %u\n",i,cigar_data[i]);
+				//Rprintf("[bam_align_create] b) i: %i\tcigar: %u\tcigar[i]: %u\n",i,bam1_cigar(align),bam1_cigar(align)[i]);
+#endif
 			}
 			if(*s)
 				error("[bam_align_create] Unmatched CIGAR operation");
-			c->bin = (uint16_t)  bam_reg2bin((uint32_t)c->pos, bam_calend(c, bam1_cigar(align)));
+			c->bin = bam_reg2bin(c->pos, bam_calend(c, bam1_cigar(align)));
 			doff += c->n_cigar * 4;
 		}
 		else
 		{
-			/* s[0]='*' (empty cigar)						*/
+			// s[0]='*' (empty cigar)
 			if (!(c->flag&BAM_FUNMAP)) {
 				Rprintf("[bam_align_create] Parse warning: mapped sequence without CIGAR\n");
 				c->flag |= BAM_FUNMAP;
 			}
-			c->bin = (uint16_t) bam_reg2bin((uint32_t)c->pos, ((uint32_t)c->pos) + 1);
+			c->bin = bam_reg2bin(c->pos, c->pos + 1);
 		}
 	}
 
+#ifdef BAM1_ADD_CIGAR
+	memcpy(((align)->data + c->l_qname),bam1_cigar(align),c->n_cigar*sizeof(uint32_t));
+#else
+	memcpy(((align)->data + c->l_qname),cigar_data,c->n_cigar*sizeof(uint32_t));
+#endif
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * Sequence and qualities
-	 */
-	c->l_qseq = (int32_t)strlen(seq);
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+	// Sequence and qualities
+	c->l_qseq = strlen(seq);
+	Rprintf("[bam_align_create] strlen(seq): %i\tn_cigar: %u\tcigar qlen: %i\n",c->l_qseq,c->n_cigar,bam_cigar2qlen(c, (uint32_t*) bam1_cigar(align)));
 
-	// This means that length of sequence is restricted to 255:
 	if(strcmp(qual,"*"))
 	{
-		if (c->n_cigar && c->l_qseq != (int32_t)bam_cigar2qlen(c, bam1_cigar(align)))
-			error("[bam_align_set_seq] cigar does not match sequence length.");
+		if (c->n_cigar && (c->l_qseq != bam_cigar2qlen(c, (uint32_t*) bam1_cigar(align))))
+		{
+			Rprintf("[bam_align_create] strlen(seq): %i\tn_cigar: %u\tcigar qlen: %i\n",c->l_qseq,c->n_cigar,bam_cigar2qlen(c, (uint32_t*) bam1_cigar(align)));
+			Rprintf("[bam_align_create] cigar: %u\n",bam1_cigar(align));
+			error("[bam_align_create] cigar does not match sequence length.");
+		}
 		p = (uint8_t*)alloc_align_data(align, doff + c->l_qseq + (c->l_qseq+1)/2) + doff;
-		memset(p, 0, (((size_t)c->l_qseq)+1)/2);
-		for (i = 0; i< c->l_qseq; ++i)
-			p[i/2] |= (uint8_t) (bam_nt16_table[(int)seq[i]] << 4*(1-i%2));
+		memset(p, 0, (c->l_qseq+1)/2);
+		for (i = 0; i < c->l_qseq; ++i)
+			p[i/2] |= bam_nt16_table[(int)seq[i]] << 4*(1-i%2);
 	}
 	else
 		c->l_qseq = 0;
 
-	/* qualities											*/
-	if (strcmp(qual, "*") && (((uint32_t)c->l_qseq) != strlen(qual)))
+	// qualities
+	if (strcmp(qual, "*") && c->l_qseq != strlen(qual))
 				error("[bam_align_set_seq] Sequence and quality are inconsistent");
 	p += (c->l_qseq+1)/2;
 	if (strcmp(qual, "*") == 0)
 		for (i = 0; i < c->l_qseq; ++i)
 			p[i] = 0xff;
 	else
-		memcpy(p,qual,((size_t)c->l_qseq)+1);
+		memcpy(p,qual,c->l_qseq+1);
+		//for (i = 0; i < c->l_qseq; ++i)
+			//p[i] = qual[i];
 	doff += c->l_qseq + (c->l_qseq+1)/2;
 
 
-	/* No auxiliary data									*/
+	// No auxiliary data
 	align->l_aux=0;
+
 	align->data_len=doff;
 
 	SEXP ptr;
@@ -4040,6 +4067,7 @@ SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 	UNPROTECT(1);
 	return ptr;
 }
+
 
 
 

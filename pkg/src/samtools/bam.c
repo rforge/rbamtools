@@ -39,7 +39,7 @@ int32_t bam_cigar2qlen(const bam1_core_t *c, const uint32_t *cigar)
 	for (k = 0; k < c->n_cigar; ++k) {
 		int op = (int) cigar[k] & BAM_CIGAR_MASK;
 		if (op == BAM_CMATCH || op == BAM_CINS || op == BAM_CSOFT_CLIP || op == BAM_CEQUAL || op == BAM_CDIFF)
-			l += BC_RIGHT_SHIFT(cigar[k]); //cigar[k] >> BAM_CIGAR_SHIFT;
+			l += BC_RIGHT_SHIFT(cigar[k]); // cigar[k] >> BAM_CIGAR_SHIFT;
 	}
 	return l;
 }
@@ -215,6 +215,16 @@ int bam_read1(bamFile fp, bam1_t *b)
 	if (bam_read(fp, b->data, b->data_len) != b->data_len) return -4;
 	b->l_aux = b->data_len - c->n_cigar * 4 - c->l_qname - c->l_qseq - (c->l_qseq+1)/2;
 	if (bam_is_be) swap_endian_data(c, b->data_len, b->data);
+
+
+#ifdef BAM1_ADD_CIGAR
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	// Fill additional cigar field with copy of cigar data
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	COPY_CIGAR_VALUES(b);
+	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+#endif
+
 	return 4 + block_len;
 }
 
