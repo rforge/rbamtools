@@ -18,14 +18,16 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #define BAM1_ADD_CIGAR
 
-# define COPY_CIGAR_VALUES(b) 																				\
+// bam.h: bam_copy1 (796), bam_dup1 (821)
+// align_list.h: copy_align, duplicate_align
+#define COPY_CIGAR_VALUES(b) 																				\
 		do																									\
 		{																									\
-				((b)->cigar=calloc((b)->core.n_cigar,sizeof(uint32_t)));									\
+				free((b)->cigar);																			\
+				(b)->cigar=calloc((b)->core.n_cigar,sizeof(uint32_t));										\
 				memcpy((b)->cigar,((b)->data + (b)->core.l_qname),(b)->core.n_cigar*sizeof(uint32_t));		\
-				}																							\
+		}																									\
 		while(0)
-
 
 
 

@@ -494,8 +494,9 @@ extern "C" {
 // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
 // Additionally free extra copy of cigar data
 // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
-#define bam_destroy1(b) do {					\
-		if (b) { free((b)->data); free((b)->cigar); free(b); }	\
+#define bam_destroy1(b) do {									\
+		if (b) { free((b)->data); free((b)->cigar); free(b); 	\
+		}														\
 	} while (0)
 
 #else
@@ -772,17 +773,28 @@ static R_INLINE uint32_t bam_reg2bin(uint32_t beg, uint32_t end)
   @param  bsrc  source alignment struct
   @return       pointer to the destination alignment struct
  */
+
+// free((b)->data); free((b)->cigar); free(b);
+
 static R_INLINE bam1_t *bam_copy1(bam1_t *bdst, const bam1_t *bsrc)
 {
 	uint8_t *data = bdst->data;
 	int m_data = bdst->m_data;   // backup data and m_data
-	if (m_data < bsrc->data_len) { // double the capacity
-		m_data = bsrc->data_len; kroundup32(m_data);
+	if (m_data < bsrc->data_len)
+	{ // double the capacity
+		m_data = bsrc->data_len;
+		kroundup32(m_data);
 		data = (uint8_t*)realloc(data, (size_t) m_data);
 	}
 	memcpy(data, bsrc->data, (size_t) bsrc->data_len); // copy var-len data
-	*bdst = *bsrc; // copy the rest
-	// restore the backup
+
+	// plain copy, replaces: *bdst=*bsrc
+	bdst->core=bsrc->core;
+	bdst->l_aux=bsrc->l_aux;
+	bdst->data_len=bsrc->data_len;
+	// bsrc->cigar must not be copied here!
+
+	// deep copy
 	bdst->m_data = m_data;
 	bdst->data = data;
 
@@ -806,8 +818,16 @@ static R_INLINE bam1_t *bam_dup1(const bam1_t *src)
 {
 	bam1_t *b;
 	b = bam_init1();
-	*b = *src;
-	b->m_data = b->data_len;
+
+	// Plain copy
+	// replaces: *b=*src
+	b->core=src->core;
+	b->l_aux=src->l_aux;
+	b->data_len=src->data_len;
+	b->m_data = b->data_len;		// m_data: max data size
+	// b->cigar must remain 0!
+
+	// Deep copy
 	b->data = (uint8_t*)calloc((size_t) b->data_len, 1);
 	memcpy(b->data, src->data, (size_t) b->data_len);
 

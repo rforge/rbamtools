@@ -13,6 +13,7 @@
 #define ALIGN_LIST_H_
 #include "samtools/sam.h"
 #include "samtools/bam.h"
+#include "samtools/rdef.h"
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * basic definitions
@@ -54,10 +55,11 @@ align_list * init_align_list()
 {
 	align_list * l=(align_list*) calloc(1,sizeof(align_list));
 	/* Create large number because min_seqlen must decrease	*/
-	--(l->min_seqlen);
+	l->min_seqlen=10000;
 	return l;
 }
 
+// Copy of bam_copy1 in bam.h
 static R_INLINE void copy_align(bam1_t *target,const bam1_t * const source)
 {
 	/* see bam.h duplicate_align	*/
@@ -73,17 +75,26 @@ static R_INLINE void copy_align(bam1_t *target,const bam1_t * const source)
 	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
 	// Fill additional cigar field with copy of cigar data
 	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
+	// double free!
+	target->cigar=0;
 	COPY_CIGAR_VALUES(target);
 	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + //
 #endif
 }
 
+// Copy of bam_dup1 in bam.h
 static R_INLINE bam1_t *duplicate_align(const bam1_t *src)
 {
 	bam1_t *b;
 	b = bam_init1();
-	*b = *src;
-	b->m_data = b->data_len;
+
+	// Static copy (replaces *b=*src)
+	b->core=src->core;
+	b->l_aux=src->l_aux;
+	b->data_len=src->data_len;
+	b->m_data = b->data_len;	// max data len=data_len (new allocated)
+	// b->cigar must stay 0!
+
 	b->data = (uint8_t*)calloc((size_t)(b->data_len), 1);
 	memcpy(b->data, src->data, (size_t)(b->data_len));
 
@@ -103,6 +114,13 @@ static R_INLINE align_element* align_list_init_elem(const bam1_t *align)
 	align_element *e=calloc(1,sizeof(align_element));
 	e->align=duplicate_align(align);
 	return e;
+}
+
+static R_INLINE void align_list_destroy_elem(align_element *e)
+{
+	//Rprintf("[align_list_destroy_elem] e=%u\n",e);
+	bam_destroy1(e->align);
+	free(e);
 }
 
 
@@ -134,6 +152,7 @@ void align_list_push_back(align_list *l, const bam1_t *align)
 		l->last_el=e;
 		++(l->size);
 	}
+	//Rprintf("[align_list_push_back] e=%x\n",e);
 }
 
 void align_list_push_front(align_list *l,const bam1_t *align)
@@ -160,25 +179,23 @@ void align_list_push_front(align_list *l,const bam1_t *align)
 		l->first_el=e;
 		++(l->size);
 	}
+	//Rprintf("[align_list_push_front] e=%x\n",e);
 }
 
 void align_list_pop_back(align_list *l)
 {
+	//Rprintf("[align_list_pop_back] e=%x\n",l->last_el);
 	if(l->first_el!=l->last_el)
 	{
 		align_element *e=l->last_el;
 		e->last_el->next_el=0;
 		l->last_el=e->last_el;
-		free((e->align)->data);
-		free(e->align);
-		free(e);
 		--(l->size);
+		align_list_destroy_elem(e);
 	}
 	else if(l->last_el!=0)
 	{
-		free(l->first_el->align->data);
-		free(l->first_el->align);
-		free(l->first_el);
+		align_list_destroy_elem(l->last_el);
 		l->first_el=0;
 		l->last_el=0;
 		l->size=0;
@@ -188,22 +205,19 @@ void align_list_pop_back(align_list *l)
 
 void align_list_pop_front(align_list *l)
 {
+	//Rprintf("[align_list_pop_front] e=%x\n",l->first_el);
 	align_element *e;
 	if(l->first_el!=l->last_el)
 	{
 		e=l->first_el;
 		e->next_el->last_el=0;
 		l->first_el=e->next_el;
-		free((e->align)->data);
-		free(e->align);
-		free(e);
 		--(l->size);
+		align_list_destroy_elem(e);
 	}
 	else if(l->first_el!=0)
 	{
-		free(l->first_el->align->data);
-		free(l->first_el->align);
-		free(l->first_el);
+		align_list_destroy_elem(l->first_el);
 		l->first_el=0;
 		l->last_el=0;
 		l->size=0;

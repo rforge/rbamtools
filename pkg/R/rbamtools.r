@@ -40,6 +40,15 @@
 #  13.Aug.13  Added countTextLines function, valgrind tested (2.6.1)
 #  26.Aug.13  Removed "coerce" from Namespace declaration
 #  02.Sep.13  Changed "cat" to "message"
+#  04.Dec.13  2.7.0 Corrected UBSAN "out of bounds error" in bitmask.h
+#             Misalign error as reported by Prof. Ripley:
+#             "The issue is the type spoofing of
+#             Rbamtools/src/samtools/bam.h:#define bam1_cigar(b)
+#             ((uint32_t*)((b)->data + (b)->core.l_qname))"
+#  10.Jun.14  2.9.1: Corrected "Mis-alignment errors"
+
+
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 .onUnload<-function(libpath) { library.dynam.unload("rbamtools",libpath) }

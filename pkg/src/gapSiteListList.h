@@ -8,7 +8,7 @@
 #ifndef GAPSITELISTLIST_H_
 #define GAPSITELISTLIST_H_
 
-#include <R.h>
+#include "samtools/rdef.h"
 #include "gapSiteList.h"
 
 typedef struct site_ll_element

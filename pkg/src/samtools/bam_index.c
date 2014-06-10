@@ -161,7 +161,8 @@ bam_index_t *bam_index_core(bamFile fp)
 	uint64_t save_off, last_off, n_mapped, n_unmapped, off_beg, off_end, n_no_coor;
 
 	idx = (bam_index_t*)calloc(1, sizeof(bam_index_t));
-	b = (bam1_t*)calloc(1, sizeof(bam1_t));
+	b= bam_init1();
+	//b = (bam1_t*)calloc(1, sizeof(bam1_t));
 	h = bam_header_read(fp);
 	c = &b->core;
 
@@ -234,7 +235,9 @@ bam_index_t *bam_index_core(bamFile fp)
 	}
 	// REP: if (ret < -1) fprintf(stderr, "[bam_index_core] truncated file? Continue anyway. (%d)\n", ret);
 	if (ret < -1) Rprintf("[bam_index_core] truncated file? Continue anyway. (%d)\n", ret);
-	free(b->data); free(b);
+
+	bam_destroy1(b);
+	//free(b->data); free(b);
 	idx->n_no_coor = n_no_coor;
 	return idx;
 }
@@ -495,14 +498,12 @@ int bam_index_build2(const char *fn, const char *_fnidx)
 	size_t len;
 
 	if ((fp = bam_open(fn, "r")) == 0) {
-		// REP: fprintf(stderr, "[bam_index_build2] fail to open the BAM file.\n");
 		Rprintf("[bam_index_build2] fail to open BAM file: '%s'\n",fn);
 		return -1;
 	}
 	idx = bam_index_core(fp);
 	bam_close(fp);
 	if(idx == 0) {
-		// REP: fprintf(stderr, "[bam_index_build2] fail to index the BAM file.\n");
 		Rprintf("[bam_index_build2] fail to index the BAM file.\n");
 		return -1;
 	}
@@ -538,7 +539,6 @@ int bam_index_build(const char *fn)
 int bam_index(int argc, char *argv[])
 {
 	if (argc < 2) {
-		// REP: fprintf(stderr, "Usage: samtools index <in.bam> [out.index]\n");
 		Rprintf("Usage: samtools index <in.bam> [out.index]\n");
 		return 1;
 	}
