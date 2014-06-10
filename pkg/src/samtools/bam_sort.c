@@ -389,7 +389,7 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 	buf = (bam1_t**)calloc(max_mem / BAM_CORE_SIZE, sizeof(bam1_t*));
 	// write sub files
 	for (;;) {
-		if (buf[k] == 0) buf[k] = (bam1_t*)calloc(1, sizeof(bam1_t));
+		if (buf[k] == 0) buf[k] = bam_init1();
 		b = buf[k];
 		if ((ret = bam_read1(fp, b)) < 0) break;
 		mem += (size_t) ret;
@@ -426,8 +426,9 @@ void bam_sort_core_ext(int is_by_qname, const char *fn, const char *prefix, size
 	}
 	for (k = 0; k < ((int)(max_mem / BAM_CORE_SIZE)); ++k) {
 		if (buf[k]) {
-			free(buf[k]->data);
-			free(buf[k]);
+			bam_destroy1(buf[k]);
+			//free(buf[k]->data);
+			//free(buf[k]);
 		}
 	}
 	free(buf);

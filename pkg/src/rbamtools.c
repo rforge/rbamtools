@@ -4024,7 +4024,7 @@ SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 	// + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
 	// Sequence and qualities
 	c->l_qseq = strlen(seq);
-	Rprintf("[bam_align_create] strlen(seq): %i\tn_cigar: %u\tcigar qlen: %i\n",c->l_qseq,c->n_cigar,bam_cigar2qlen(c, (uint32_t*) bam1_cigar(align)));
+	//Rprintf("[bam_align_create] strlen(seq): %i\tn_cigar: %u\tcigar qlen: %i\n",c->l_qseq,c->n_cigar,bam_cigar2qlen(c, (uint32_t*) bam1_cigar(align)));
 
 	if(strcmp(qual,"*"))
 	{

@@ -106,50 +106,30 @@ Objects can be created by calls of the form \code{range<-bamRange(reader, coords
 }
 \author{Wolfgang Kaisers}
 \examples{
-library(rbamtools)
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+## A) Open reader
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
 bam <- system.file("extdata", "accepted_hits.bam", package="rbamtools")
-idx<-paste(bam,"bai",sep=".")
 # Open BAM file
-reader<-bamReader(bam)
-# create.index(reader,idx)
-# Load BAM index file
-load.index(reader,idx)
-index.initialized(reader)   # Should return 'TRUE'
+reader<-bamReader(bam,idx=TRUE)
 
-# +++++++++++++++++++++++++++++++++++++++++++++++
-#  Find appropriate refid (=ID)
-#  Returns a data.frame with three columns:
-#  ID=refid, SN=Sequence Name, LN=Sequence length
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+## B) Read range (see: getRefData)
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
 
-rdf<-getRefData(reader)
-head(rdf)
-
-# +++++++++++++++++++++++++++++++++++++++++++++++
-# The sequence length (LN) also determines valid
-# range for start and stop coordinates
-# Invalid refid-, start- or stop-coordinates will
-# release an error.
 # coords: refid=0, start=0, stop=249250621
-# +++++++++++++++++++++++++++++++++++++++++++++++
-
 coords<-as.integer(c(0,0,249250621))
 range<-bamRange(reader,coords)
-size(range)
-range<-bamRange(reader,coords,complex=TRUE)
-dfr<-as.data.frame(range)
+bamClose(reader)
+
+# Access data in 'bamRange' 
 size(range)
 align<-getNextAlign(range)
 cigarData(align)
-rewind(range)
-# while(!is.null(align))
-# {
-#   print(position(align))
-#   align<-getNextAlign(range)
-# }
-bamClose(reader)
 
-# +++++++++++++++++++++++++++++++++++++++++++++++
-# Get print message and some other values
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+## C) Get print message and some other values
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
 range
 getCoords(range)
 getSeqLen(range)
