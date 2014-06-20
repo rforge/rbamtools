@@ -319,7 +319,7 @@ setMethod(f="bamSort",signature="bamReader",
             cat("[bamSort] Sorting finished.\n")
             return(invisible(paste(prefix,".bam",sep="")))
           })
-
+# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + #
 #  End Index related functions
 # + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + #
 
