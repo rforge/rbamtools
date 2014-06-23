@@ -9,26 +9,17 @@
  *      29.Okt.12 (nemesis) [gap_list_get_df] Changed cigar_type output to 'factor'.
  *      30.Okt.12 (phoibe)  [gap_list_fetch] Removed gap_list_fetch message.
  *      31.Okt.12 (phoibe)  [bam_reader_save_aligns] function & SAM_TYPE_READ added.
- *	01.Nov.12 (nemesis) [get_const_next_align] added to correct memory leak.
- *	07.Jan.13 (phoibe)  gap_site_list added (contains bitmask functions)
- *	18.Jan.13 (phoibe)  gap_site_list_list added.
- *	01.Feb.13 (phoibe)  [gap_site_ll_add_curr_pp] Testing for empty input list added.
- *	05.Feb.13 (phoibe)  First successful test with reading bamGap objects with transfer to gapProbes
- *	18.Mar.13 (nemesis) Corrected inline declarations; Changed qmm to qsm (mean to sum)
- * 	11.Jun.13 (phoibe)  Added bam_reader_write_fastq, bam_reader_write_fastq_lgl,
- * 				bam_range_write_fastq, bam_range_write_fastq_lgl functions. Valgrind tested.
+ *		01.Nov.12 (nemesis) [get_const_next_align] added to correct memory leak.
+ *		07.Jan.13 (phoibe)  gap_site_list added (contains bitmask functions)
+ *		18.Jan.13 (phoibe)  gap_site_list_list added.
+ *		01.Feb.13 (phoibe)  [gap_site_ll_add_curr_pp] Testing for empty input list added.
+ *		05.Feb.13 (phoibe)  First successful test with reading bamGap objects with transfer to gapProbes
+ *		18.Mar.13 (nemesis) Corrected inline declarations; Changed qmm to qsm (mean to sum)
+ * 		11.Jun.13 (phoibe)  Added bam_reader_write_fastq, bam_reader_write_fastq_lgl,
+ * 									bam_range_write_fastq, bam_range_write_fastq_lgl functions. Valgrind tested.
  *      02.Jul.13 (phoibe)  Added bam_count. Valgrind tested
- *      02.Sep.13 (phoibe)  Added R_init_rbamtools
+ *      02.Sep.13 (phoibe)	Added R_init_rbamtools
  *      25.Nov.13 (gaia)
- *	19.Jun.14 (gaia)    Added correction workaround for misalign errors (revealed by Clang):
- *                    i) New rdef.h file in src/samtools
- *                   ii) Introduced uint32_t *cigar - member in bam1_t (bam.h; 207)
- *                  iii) Re-defined bam1_cigar and bam_destroy1 macros (bam.h)
- *                   iv) Adapt bam_copy1, bam_dup1 (bam.h) and copy_align, duplicate_align (align_list.h)
- *                    v) Correct bam1_t handling in bam_sort_core_ext (bam_sort.c) and bam_index_core (bam_index.c)
-			    Corrections of non c99 compliant calls:
- *                   vi) Remove fileno calls, replace ftello by ftell (-> c99 compliant)
- *                  vii) Replace strdup calls ( malloc(strlen+1); strcpy)
  */
 
 #ifndef rbamtools_h
@@ -183,6 +174,9 @@ SEXP bam_range_get_seqlen(SEXP pRange);
 SEXP bam_range_get_qual_df(SEXP pRange);
 SEXP bam_range_get_align_depth(SEXP pRange,SEXP pGap);
 SEXP bam_range_count_nucs(SEXP pRange);
+SEXP bam_range_idx_copy(SEXP pRange, SEXP pIndex);
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // BamAlignment

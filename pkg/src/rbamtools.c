@@ -2981,6 +2981,47 @@ SEXP bam_range_count_nucs(SEXP pRange)
 	return pCount;
 }
 
+SEXP bam_range_idx_copy(SEXP pRange, SEXP pIndex)
+{
+	if(TYPEOF(pRange)!=EXTPTRSXP)
+		error("[bam_range_idx_copy] No external pointer!");
+	if(TYPEOF(pIndex)!=INTSXP)
+		error("[bam_range_idx_copy] Index must be Integer!");
+
+	// Expects:
+	//   i) idx must be sorted in ascending order
+	//  ii) idx[0] >0
+	unsigned * idx = (unsigned*)INTEGER(pIndex);
+	unsigned n_idx = (unsigned) LENGTH(pIndex);
+
+	align_list *src, *res;
+	src = (align_list*) (R_ExternalPtrAddr(pRange));
+
+	if(src==NULL)
+		error("[bam_range_idx_copy] align_list pointer=NULL!");
+
+	res = align_list_idx_copy(src, idx, n_idx);
+
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Create bamRange S4 object
+	 */
+	SEXP bam_range;
+    PROTECT(bam_range = NEW_OBJECT(MAKE_CLASS("bamRange")));
+
+    SEXP list;
+	PROTECT(list = R_MakeExternalPtr( (void*)(res), R_NilValue, R_NilValue));
+	R_RegisterCFinalizer(list, finalize_bam_range);
+	SEXP list_name;
+	PROTECT(list_name = Rf_mkString("range"));
+    bam_range = SET_SLOT(bam_range, list_name,list);
+
+    /* Return													*/
+	UNPROTECT(3);
+	return bam_range;
+}
+
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * bam_header
@@ -4517,6 +4558,7 @@ void R_init_rbamtools(DllInfo *info)
 			{ "bam_range_get_qual_df",				(DL_FUNC) &bam_range_get_qual_df,				1},
 			{ "bam_range_get_align_depth",  		(DL_FUNC) &bam_range_get_align_depth,   		2},
 			{ "bam_range_count_nucs",               (DL_FUNC) &bam_range_count_nucs,                1},
+			{ "bam_range_idx_copy",               	(DL_FUNC) &bam_range_idx_copy,                	2},
 
 			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 			 * BamAlignment

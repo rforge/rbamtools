@@ -70,8 +70,8 @@ static R_INLINE void copy_align(bam1_t *target,const bam1_t * const source)
 
 	// Deep copy
 	free(target->data);
-	target->data=(uint8_t*)calloc(target->data_len,1);
-	memcpy(target->data,source->data,target->data_len);
+	target->data=(uint8_t*)calloc((size_t) target->data_len,1);
+	memcpy(target->data,source->data,(size_t)target->data_len);
 
 	// + + + + + + + + + + + + + + + //
 	// Eventually fill cigar field
@@ -85,6 +85,9 @@ static R_INLINE bam1_t *duplicate_align(const bam1_t *src)
 {
 	bam1_t *b;
 	b = bam_init1();
+
+	if(src==NULL)
+		return NULL;
 
 	// Static copy (replaces *b=*src)
 	b->core=src->core;
@@ -444,11 +447,52 @@ void insert_pre_curr_align(align_list *l,bam1_t *align)
 	++(l->size);
 }
 
+
+static R_INLINE align_list* align_list_idx_copy(align_list *src, unsigned* index, unsigned n_index)
+{
+	// assumes:
+	//   i) index is ascending ordered
+	//  ii) index[0] >=1
+	// iii) n_index = number of elements in index
+	unsigned al_idx, idx_idx;
+	const bam1_t* align;
+	align_list *dest;
+
+	if(src==0)
+		return 0;
+
+	idx_idx = 0;
+	dest = init_align_list();
+
+	dest->seqid=src->seqid;
+	dest->seq_LN=src->seq_LN;
+	dest->range_begin=src->range_begin;
+	dest->range_end=src->range_end;
+
+	if(src->refname)
+	{
+		dest->refname=malloc(strlen(src->refname) + 1);
+		strcpy(dest->refname,src->refname);
+	}
+
+	for(al_idx = 1; al_idx < src->size && idx_idx < n_index; ++al_idx)
+	{
+		align = get_const_next_align(src);
+		if(al_idx==index[idx_idx] && align!=NULL)
+		{
+			align_list_push_back(dest,align);
+			++idx_idx;
+		}
+	}
+	return dest;
+}
+
+
 static R_INLINE void add_match_depth(unsigned long  *ald, unsigned long begin,unsigned long end,unsigned long position, unsigned long cigar_len)
 {
 	// 0-based index of last count value
 	// nPos=range_end+1 (size of count)
-	int range_end=end-begin;
+	long range_end= ((long) end) - ((long) begin);
 	if(range_end<1)
 		return;
 
@@ -457,8 +501,8 @@ static R_INLINE void add_match_depth(unsigned long  *ald, unsigned long begin,un
 	unsigned long align_end=position+cigar_len-1;
 
 	// first and last writing index (0-based). <0 allowed
-	long w_start=position -begin;
-	long w_end  =align_end-begin;
+	long w_start= ((long) position) - ((long) begin);
+	long w_end  = ((long) align_end) - ((long) begin);
 
 	if((w_start>=range_end) | (w_end<0))
 		return;
@@ -468,12 +512,13 @@ static R_INLINE void add_match_depth(unsigned long  *ald, unsigned long begin,un
 	w_end  =(w_end>range_end) ? range_end : w_end;
 
 	// Do counting
-	unsigned long i;
+	long i;
 	for(i=w_start;i<=w_end;++i)
 		++(ald[i]);
 
 	return;
 }
+
 
 void count_align_depth (unsigned long *ald,unsigned long begin,unsigned long end,const bam1_t * align)
 {
