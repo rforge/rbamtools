@@ -2065,20 +2065,28 @@ setMethod("nAlignGaps",signature="gapSiteList",definition=function(object)
 setMethod("refID",signature="gapSiteList",definition=function(object)
 {.Call("gap_site_list_get_ref_id",object@list,PACKAGE="rbamtools")})
 
-setMethod("show","gapSiteList",function(object){
-  cat("An object of class '",class(object),"'. size: ",size(object),"\n",sep="")
-  cat("nAligns:",nAligns(object),"\tnAlignGaps:",nAlignGaps(object),"\n")
+
+setMethod("show", "gapSiteList",function(object){
+    cat("An object of class '", class(object), "'. size: ", size(object),
+                "\n",sep="")
+    
+  cat("nAligns:", nAligns(object), "\tnAlignGaps:", nAlignGaps(object), "\n")
   return(invisible())
 })
 
-merge.gapSiteList<-function(x,y,...)
+merge.gapSiteList<-function(x, y, ...)
 {
-  if(!is(y,"gapSiteList"))
-    stop("[merge.gapSiteList] y must be of class 'gapSiteList'!")
-  res<-new("gapSiteList")
-  res@list<-.Call("gap_site_list_merge",x@list,y@list)
-  return(res)
+    if(!is(y,"gapSiteList"))
+        stop("'y' must be of class 'gapSiteList'!")
+    res<-new("gapSiteList")
+    xref = refID(x)
+    if(refID(x) != refID(y))
+        warning("[merge] 'x' and 'y' have different refID's. Using refID(x)!")
+    
+    res@list <- .Call("gap_site_list_merge", x@list, y@list, refID(x))
+    return(res)
 }
+
 
 # + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + #
 #                                                                             #
