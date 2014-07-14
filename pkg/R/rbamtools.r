@@ -637,41 +637,69 @@ stop("[getHeaderText.bamReader] reader must be opened! Check 'isOpen(reader)'!")
     .Call("bam_reader_get_header_text",object@reader,PACKAGE="rbamtools")))
 })
 
-# getRefCount
-setMethod(f="getRefCount",signature="bamReader",definition=function(object) {
-  if(!isOpen(object))
-    stop("[getRefCount.bamReader] reader must be opened! Check with 'isOpen(reader)'!")
-  return(.Call("bam_reader_get_ref_count",object@reader,PACKAGE="rbamtools"))})
-
-# getRefData
-setMethod(f="getRefData",signature="bamReader",definition=function(object) {
-  if(!isOpen(object))
-    stop("[getRefData.bamReader] reader must be opened! Check with 'isOpen(reader)'!")
-  return(.Call("bam_reader_get_ref_data",object@reader,PACKAGE="rbamtools"))})
-
-# getRefCoords: Helper function that returns coordinates of entire ref
-# for usage with bamRange, gapList or siteList function
-setMethod(f="getRefCoords",signature="bamReader",definition=function(object,sn){
-  if(!is.character(sn))
-    stop("[getRefCoords] sn must be character!")
-  if(length(sn)>1)
-    stop("[getRefCoords] sn must have length 1!")
-  ref<-getRefData(object)
-  id<-which(sn==ref$SN)
-  if(length(id)==0)
-    stop("[getRefCoords] No match for sn in ref-data-SN!")
-  coords<-c(ref$ID[id],0,ref$LN[id])
-  names(coords)<-c("refid","start","stop")
-  return(c(ref$ID[id],0,ref$LN[id]))
+## + + + + + + + + + + + + + + + + + ##
+## getRefCount
+## + + + + + + + + + + + + + + + + + ##
+setMethod(f = "getRefCount", signature = "bamReader",
+                                            definition = function(object)
+{
+    if(!isOpen(object))
+        stop("reader must be opened! Check with 'isOpen(reader)'!")
+    
+    return(.Call("bam_reader_get_ref_count", object@reader, 
+                                            PACKAGE = "rbamtools"))
 })
-# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + #
-#  End Header related functions
-# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + #
 
 
-# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + #
-#  Index related functions
-# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + #
+## + + + + + + + + + + + + + + + + + ##
+## getRefData
+## + + + + + + + + + + + + + + + + + ##
+setMethod(f = "getRefData", signature = "bamReader",
+                                                definition = function(object)
+{
+    if(!isOpen(object))
+        stop("reader must be opened! Check with 'isOpen(reader)'!")
+    
+    return(.Call("bam_reader_get_ref_data", object@reader,
+                                                PACKAGE = "rbamtools"))
+})
+
+
+## + + + + + + + + + + + + + + + + + ##
+## getRefCoords: Returns coordinates 
+## of entire reference for usage with
+## bamRange, gapList or siteList
+## function.
+## + + + + + + + + + + + + + + + + + ##
+setMethod(f = "getRefCoords", signature = "bamReader",
+                                            definition = function(object,sn)
+{
+    if(!is.character(sn))
+        stop("sn must be character!")
+    
+    if(length(sn)>1)
+        stop("sn must have length 1!")
+  
+    ref <- getRefData(object)
+    id<-which(sn==ref$SN)
+    
+    if(length(id)==0)
+        stop("No match for sn in ref-data-SN!")
+    
+    coords<-c(ref$ID[id],0,ref$LN[id])
+    names(coords)<-c("refid","start","stop")
+    
+    return(c(ref$ID[id],0,ref$LN[id]))
+})
+
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+##  End Header related functions
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+
+
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+##  Index related functions
+## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
 # create.index
 setMethod(f = "create.index", signature = "bamReader",
     definition=function(object,idx_filename)
