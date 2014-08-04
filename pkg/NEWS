@@ -1,3 +1,19 @@
+CHANGES IN VERSION 2.9.16
+-------------------------
+
+NEW FEATURES
+
+    o New addReadGroup function
+
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o Functions for managing read groups have changed
+
+BUG FIXES
+
+    o Corrected a bug in parsing bamHeader text (when Read group entries were present)
+
 CHANGES IN VERSION 2.9.14
 -------------------------
 

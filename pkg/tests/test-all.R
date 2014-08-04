@@ -21,7 +21,7 @@ reader<-bamReader(bam,idx=TRUE)
 ## Run tests
 ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
 source("test_bam_range.r")
-
+source("test_bam_header.r")
 
 
 

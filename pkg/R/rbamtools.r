@@ -121,8 +121,26 @@ setClass("refSeqDict",
     representation(SN="character", LN="numeric",   AS="character",
                    M5="numeric",   SP="character", UR="character"))
 
-setClass("headerReadGroup",
-    representation(l="list"), validity=function(object) {return(TRUE)})
+setClass("headerReadGroup", representation(
+            nrg="integer",          ## Number of read groups
+            ID="character",         ## Read group identifier
+            CN="character",         ## Name of sequencing center
+            DS="character",         ## Description
+            DT="character",         ## Date
+            FO="character",         ## Flow order
+            KS="character",         ## Array of nucleotide bases
+            LB="character",         ## Library
+            PG="character",         ## Programes used for processing
+            PI="character",         ## Predicted median insert size
+            PL="character",         ## Platform (ILLUMINA,...)
+            PU="character",         ## Platform unit (e.g. lane code)
+            SM="character",         ## Sample (Pool name)
+            ntl="integer"           ## number of taglabs (= 12 (static))
+            ),
+                                validity=function(object) {return(TRUE)})
+
+tagLabs <- c("ID", "CN", "DS", "DT", "FO", "KS", "LB", "PG",
+             "PI", "PL", "PU", "SM")
 
 setClass("headerProgram",
     representation(l="list"),
@@ -252,7 +270,10 @@ setGeneric("getVal", function(object, member) standardGeneric("getVal"))
 
 # Generic for Writing member to object list
 setGeneric("setVal", function(object, members, values)
-                                    standardGeneric("setVal"))
+                                            standardGeneric("setVal"))
+
+# Generic fora adding read group to header
+setGeneric("addReadGroup",function(object, l) standardGeneric("addReadGroup"))
 
 # Generic for retrieving of list size
 setGeneric("size", function(object) standardGeneric("size"))
@@ -284,7 +305,7 @@ setGeneric("getQualQuantiles", function(object, quantiles, ...)
 
 # Generic for plotting of (phred) quality quantiles.
 setGeneric("plotQualQuant", function(object)
-        standardGeneric("plotQualQuant"))
+                                    standardGeneric("plotQualQuant"))
 
 # bamHeader related generics
 setGeneric("bamWriter", function(x, filename) standardGeneric("bamWriter"))
@@ -1778,33 +1799,104 @@ setMethod(f="initialize", signature="headerReadGroup",
     ## Specificatioin 1.3 (Header Section)
     ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
     
-    .Object@l <- list()
     if(!is.character(hrg))
         stop("[headerReadGroup.initialize] Argument must be string.\n")
     
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ## Samtools file format says: Unordered multiple @RG lines are allowed
+    ## Each @RG segment comes as one string in hrg
+    ## Number of @RG segments = length(hrg)
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ## Split hgr into multiple @RG fragments
+    ## In effect, hrg can be either given as vector with length > 1
+    ## or as single vector with @RG entries separated by '\n'
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    hrg <- unlist(strsplit(hrg, "\n"))
+    
+    .Object@nrg <- length(hrg)
+    
+    .Object@ntl <- 12L                      # number of tags
+    .Object@ID <- character(.Object@nrg)
+    .Object@CN <- character(.Object@nrg)
+    .Object@DS <- character(.Object@nrg)
+    .Object@DT <- character(.Object@nrg)
+    .Object@FO <- character(.Object@nrg)
+    .Object@KS <- character(.Object@nrg)
+    .Object@LB <- character(.Object@nrg)
+    .Object@PG <- character(.Object@nrg)
+    .Object@PI <- character(.Object@nrg)
+    .Object@PL <- character(.Object@nrg)
+    .Object@PU <- character(.Object@nrg)
+    .Object@SM <- character(.Object@nrg)
+    
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ## Allows for empty object
     ## hrg="" or character(0)
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
     if((length(hrg)==1 && nchar(hrg)==0) || length(hrg)==0)
-        return(.Object)
-    
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Split string into fields
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    tags <- unlist(strsplit(hrg, delim))
-    if(tags[1]!="@RG")
-        stop("[headerReadGroup.initialize] First item of string must be @RG!\n")
-    
-    tags <- tags[-1]
-    tagLabs <- c("ID", "CN", "DS", "DT", "FO", "KS", "LB", "PG",
-                                                "PI", "PL", "PU", "SM")
-    n <- length(tags)
-    for(i in 1:n)
     {
-        f <- substr(tags[i], 1, 2)
-        mtc <- match(f, tagLabs)
-        if(is.na(mtc))
-            stop("Field identifier '", f, "' not in List!\n")
+        .Object@nrg <- 0L
+        return(.Object)
+    }
+    
+    tagLabs <- c("ID", "CN", "DS", "DT", "FO", "KS", "LB", "PG",
+                                                    "PI", "PL", "PU", "SM")
+    
+    for(i in 1:(.Object@nrg))
+    {
+        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+        ## Split string into fields
+        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+        tags <- unlist(strsplit(hrg[i], delim))
         
-        .Object@l[[f]] <- substr(tags[i], 4, nchar(tags[i]))
+        if(tags[1] != "@RG")
+            stop("First item of string must be @RG!\n")
+        
+        ## TODO: Routine does not check for:
+        ## 'Each @RG line must have a unique ID.' (SAM file format)
+        
+        tags <- tags[-1]
+        ntags <- length(tags)
+        for(j in 1:ntags)
+        {
+            if(substr(tags[j], 1, 2) == "ID")
+                .Object@ID[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "CN")
+                .Object@CN[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "DS")
+                .Object@DS[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "DT")
+                .Object@DT[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "FO")
+                .Object@FO[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "KS")
+                .Object@KS[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "LB")
+                .Object@LB[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "PG")
+                .Object@PG[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "PI")
+                .Object@PI[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "PL")
+                .Object@PL[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "PU")
+                .Object@PU[i] <- substring(tags[j], 4)
+            
+            if(substr(tags[j], 1, 2) == "SM")
+                .Object@SM[i] <- substring(tags[j], 4)
+        }
     }
     return(.Object)
 })
@@ -1812,13 +1904,50 @@ setMethod(f="initialize", signature="headerReadGroup",
 
 setMethod("show", "headerReadGroup",  function(object)
 {
-    n <- length(object@l)
-    if(n>0)
+    n <- object@nrg
+    if(n > 0)
     {
         cat("An object of class \"", class(object), "\"\n", sep="")
-        for(i in 1:length(object@l))
+        for(i in 1:n)
         {
-            cat(names(object@l)[i], ":", object@l[[i]], "\n")
+            if(nchar(object@ID[i]) > 0)
+                cat("ID:", object@ID[i], "\n")
+            
+            if(nchar(object@CN[i]) > 0)
+                cat("CN:", object@CN[i], "\n")
+            
+            if(nchar(object@DS[i]) > 0)
+                cat("DS:", object@DS[i], "\n")
+            
+            if(nchar(object@DT[i]) > 0)
+                cat("DT:", object@DT[i], "\n")
+            
+            if(nchar(object@FO[i]) > 0)
+                cat("FO:", object@FO[i], "\n")
+            
+            if(nchar(object@KS[i]) > 0)
+                cat("KS:", object@KS[i], "\n")
+            
+            if(nchar(object@LB[i]) > 0)
+                cat("LB:", object@LB[i], "\n")
+            
+            if(nchar(object@PG[i]) > 0)
+                cat("PG:", object@PG[i], "\n")
+            
+            if(nchar(object@PI[i]) > 0)
+                cat("PI:", object@PI[i], "\n")
+            
+            if(nchar(object@PL[i]) > 0)
+                cat("PL:", object@PL[i], "\n")
+            
+            if(nchar(object@PU[i]) > 0)
+                cat("PU:", object@PU[i], "\n")
+            
+            if(nchar(object@SM[i]) > 0)
+                cat("SM:", object@SM[i], "\n")
+            
+            if(n > i)
+                cat("\n")
         }
     }else{
         cat("An empty object of class \"", class(object), "\"\n", sep="")
@@ -1829,58 +1958,259 @@ setMethod("show", "headerReadGroup",  function(object)
 setMethod("getHeaderText", signature="headerReadGroup", 
                                         definition=function(object, delim="\t")
 {
-    n <- length(object@l)
+    n <- object@nrg
     if(n == 0)
         return(character(0))
-    rfstr <- character(n)
+    
+    rgtxt <- character(n)
     for(i in 1:n)
-        rfstr[i] <- paste(names(object@l)[i], object@l[[i]], sep=":")
-    return(paste("@RG", paste(rfstr, collapse=delim), sep=delim))
+    {
+        ## ID should always be present
+        txt <- paste(delim,"ID:",object@ID[i], sep="")
+        
+        if(nchar(object@CN[i]) > 0)
+            txt <- paste(txt, delim,  "CN:", object@CN[i], sep="")
+        
+        if(nchar(object@DS[i]) > 0)
+            txt <- paste(txt, delim, "DS:", object@DS[i], sep="")
+        
+        if(nchar(object@DT[i]) > 0)
+            txt <- paste(txt, delim, "DT:", object@DT[i], sep="")
+        
+        if(nchar(object@FO[i]) > 0)
+            txt <- paste(txt, delim, "FO:", object@FO[i], sep="")
+        
+        if(nchar(object@KS[i]) > 0)
+            txt <- paste(txt, delim, "KS:", object@KS[i], sep="")
+        
+        if(nchar(object@LB[i]) > 0)
+            txt <- paste(txt, delim, "LB:", object@LB[i], sep="")
+        
+        if(nchar(object@PG[i]) > 0)
+            txt <- paste(txt, delim, "PG:", object@PG[i], sep="")
+        
+        if(nchar(object@PI[i]) > 0)
+            txt <- paste(txt, delim, "PI:", object@PI[i], sep="")
+        
+        if(nchar(object@PL[i]) > 0)
+            txt <- paste(txt, delim, "PL:", object@PL[i], sep="")
+        
+        if(nchar(object@PU[i]) > 0)
+            txt <- paste(txt, delim, "PU:", object@PU[i], sep="")
+        
+        if(nchar(object@SM[i]) > 0)
+            txt <- paste(txt, delim, "SM:", object@SM[i], sep="")
+        
+        # Remove last "\t"
+        rgtxt[i] <- paste("@RG",txt,"\n",sep="")
+    }
+    return(paste(rgtxt, collapse=""))
 })
 
 setMethod("getVal", signature="headerReadGroup", 
                                         definition=function(object, member)
 {
     if(!is.character(member))
-        stop("[getVal.headerReadGroup] Member must be character!\n")
+        stop("Member must be character!\n")
+    
+    
     tagLabs <- c("ID", "CN", "DS", "DT", "FO", "KS", "LB", 
                                                 "PG", "PI", "PL", "PU", "SM")
     
-    mtc <- match(member[1], tagLabs)
-    if(is.na(mtc))
-        stop("[getVal.headerReadGroup] Invalid member name!\n")
+    mtc <- match(member, tagLabs)
     
-    return(object@l[[member]])
+    if(any(is.na(mtc)))
+        stop("Invalid member name!\n")
+    
+    l <- list()
+    if(object@nrg == 0)
+        return(l)
+    
+    for(i in 1:length(member))
+    {
+        if(mtc[i] == 1)
+            l$ID <- object@ID
+        else if(mtc[i] == 2)
+            l$CN <- object@CN
+        else if(mtc[i] == 3)
+            l$DS <- object@DS
+        else if(mtc[i] == 4)
+            l$DT <- object@DT
+        else if(mtc[i] == 5)
+            l$FO <- object@FO
+        else if(mtc[i] == 6)
+            l$KS <- object@KS
+        else if(mtc[i] == 7)
+            l$LB <- object@LB
+        else if(mtc[i] == 8)
+            l$PG <- object@PG
+        else if(mtc[i] == 9)
+            l$PI <- object@PI
+        else if(mtc[i] == 10)
+            l$PL <- object@PL
+        else if(mtc[i] == 11)
+            l$PU <- object@PU
+        else if(mtc[i] == 12)
+            l$SM <- object@SM
+    }
+    return(l)
 })
 
 setMethod("setVal", signature="headerReadGroup", 
                                     definition=function(object, members, values)
 {
-    if(!is.character(members) || !is.character(values))
-        stop("Member name and value must be character!\n")
-    if(length(members)!=length(values))
-        stop("members and values must have same length!\n")
+    if(!is.character(members))
+        stop("Member name must be character!\n")
     
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ## Check for valid values list
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    
+    if(!is.list(values))
+        stop("Values must be given as list object")
+    
+    if(length(members)!=length(values))
+        stop("Members and values must have same length!\n")
+    
+    if(any(lapply(values,length)!=object@nrg))
+        stop("Length of values must equal number of read groups!")
+    
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ## Check for valid members entries
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
     tagLabs <- c("ID", "CN", "DS", "DT", "FO", "KS", "LB", "PG", "PI", 
                                                             "PL", "PU", "SM")
     
     mtc <- match(members, tagLabs)
     
     if(any(is.na(mtc)))
-        stop("Members must be valid Read Group Entries (See SAM Format Specification 1.3!\n")
+    {
+        stop("Members must be valid Read Group Entries ",
+                                        "(See SAM Format Specification 1.3!\n")
+    }
     
+    
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ## Create insertion code as string and parse in parent environment
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
     n <- length(members)
     obj <- deparse(substitute(object))
     for(i in 1:n)
     {
-        txt <- paste(obj, "@l$", members[i], "<-'", values[i], "'", sep="")
-        eval.parent(parse(text=txt))
+        for(j in 1:object@nrg)
+        {
+            txt <- paste(obj, "@", members[i], "[", j, "]", "<-'",
+                                                values[[i]][j], "'", sep="")
+            eval.parent(parse(text=txt))            
+        }
+
     }
     return(invisible())
 })
 
 setMethod("as.list", signature="headerReadGroup", 
-                            definition=function(x, ...){return(x@l)})
+                                            definition=function(x, ...)
+{
+    l <- list()
+    l$ID <- x@ID
+    l$CN <- x@CN
+    l$DS <- x@DS
+    l$DT <- x@DT
+    l$FO <- x@FO
+    l$KS <- x@KS
+    l$LB <- x@LB
+    l$PG <- x@PG
+    l$PI <- x@PI
+    l$PL <- x@PL
+    l$PU <- x@PU
+    l$SM <- x@SM
+    return(l)
+})
+
+
+setMethod("addReadGroup", signature="headerReadGroup", 
+                                            definition=function(object, l)
+{
+    if(!is.list(l))
+        stop("'l' must be list")
+    
+    tagLabs <- c("ID", "CN", "DS", "DT", "FO", "KS", "LB", "PG", "PI", 
+                            "PL", "PU", "SM")
+    
+    mtc <- match(names(l), tagLabs)
+    if(any(is.na(mtc)))
+        stop("All list names must be valid read group tags.")
+    
+    mtc <- match(tagLabs, names(l))
+    if(is.na(mtc[1]))
+       stop("There must be an ID given for new read group")
+    
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ## Increase number of read groups by 1
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    n <- object@nrg
+    object@nrg <- n + 1L
+    
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ## Insert ID tag
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    if(n == 0)
+    {
+        object@ID <- l[[mtc[1]]]
+    }else{
+        object@ID <- c(object@ID, l[[mtc[1]]])        
+    }
+    
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ## Eventually insert other tags
+    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    ins <- function(o, i)
+    {
+        if(!is.na(mtc[i]))
+        {
+            if(n == 0)
+                o <- l[[mtc[i]]]
+            else if(length(o) > 0)
+                o <- c(o, l[[mtc[i]]])
+            else
+                o <- c(rep("", n), l[[mtc[i]]])
+        }else{
+            if(n == 0)
+                o <- ""
+            else
+                o <- c(o,"")
+        }
+        
+        return(o)
+    }
+    
+    i <- 2
+    object@CN <- ins(object@CN, i)
+    i <- i + 1
+    object@DS <- ins(object@DS, i)
+    i <- i + 1
+    object@DT <- ins(object@DT, i)
+    i <- i + 1
+    object@FO <- ins(object@FO, i)
+    i <- i + 1
+    object@KS <- ins(object@KS, i)
+    i <- i + 1
+    object@LB <- ins(object@LB, i)
+    i <- i + 1
+    object@PG <- ins(object@PG, i)
+    i <- i + 1
+    object@PI <- ins(object@PI, i)
+    i <- i + 1
+    object@PL <- ins(object@PL, i)
+    i <- i + 1
+    object@PU <- ins(object@PU, i)
+    i <- i + 1
+    object@SM <- ins(object@SM, i)
+
+    return(object)
+})
+
+
 
 ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
 ##  End headerReadGroup
@@ -1902,7 +2232,7 @@ setMethod(f="initialize", signature="headerProgram",
     .Object@l <- list()
     
     if(!is.character(hp))
-      stop("[headerProgram.initialize] Argument must be string.\n")
+        stop("[headerProgram.initialize] Argument must be string.\n")
     
     # hp="" or character(0)
     if((length(hp)==1 && nchar(hp)==0)||length(hp)==0)
@@ -2048,27 +2378,32 @@ setMethod(f="initialize", signature="bamHeaderText",
     
     ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
     ## Split input string: Each fragment contains data for one header segment
+    ##
+    ## Identification of tags must be restricted on prefix 
+    ## because there may be @RG entries present inside program segment
+    ## (used as command line argument e.g. for aligner)
     ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
     bht <- unlist(strsplit(bh, split=delim))
+    bht_pre <- substr(bht,1,3)
     
     # Read Header Line
-    bhl <- bht[grep("@HD", bht)]
+    bhl <- bht[grep("@HD", bht_pre)]
     .Object@head <- new("headerLine", bhl)
     
     # Read Sequence Directory
-    bsd <- bht[grep("@SQ", bht)]
+    bsd <- bht[grep("@SQ", bht_pre)]
     .Object@dict <- new("refSeqDict", bsd)
     
     # Read Group
-    brg <- bht[grep("@RG", bht)]
+    brg <- bht[grep("@RG", bht_pre)]
     .Object@group <- new("headerReadGroup", brg)
     
     # Read Program Data
-    bpd <- bht[grep("@PG", bht)]
+    bpd <- bht[grep("@PG", bht_pre)]
     .Object@prog <- new("headerProgram", bpd)
     
     # Read Text comment
-    btc <- bht[grep("@CO", bht)]
+    btc <- bht[grep("@CO", bht_pre)]
     com <- substring(btc, 3)
     return(.Object)
 })
