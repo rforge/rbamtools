@@ -1,17 +1,14 @@
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  File   : rbamtools.r                                                     ##
-##  Date   : 12.Mar.2012                                                     ##
-##  Sam    : Samtools downloaded September 7, 2011. Format: v1.4-r985        ##
-##  Content: R-Source for package rbamtools                                  ##
-##  Version: 2.9.8                                                           ##
-##  Author : W. Kaisers                                                      ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   File   : rbamtools.r
+#   Date   : 12.Mar.2012
+#   Sam    : Samtools downloaded September 7, 2011. Format: v1.4-r985
+#   Content: R-Source for package rbamtools
+#   Version: 2.10.8
+#   Author : W. Kaisers
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-#  CRAN submission:
-#  check R CMD check --as-cran
-#  wput rbamtools_2.0.tar.gz ftp://cran.r-project.org/incoming/ 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 #  Changelog
 #  30.Okt.12  [initialize.gapList] Made printout message optional (verbose)
 #  31.Okt.12  [bamRange] Included test for initialized index
@@ -52,30 +49,27 @@
 #                                                       due to internal errors.
 #  21.Jul.14  Updated plotAlignDepth 
 #  14.Jul.14  Added test directory
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+#  28.Jul.14  Added NEWS and ChangeLog file
+#  29.Sep.14  Added support for DS segment in headerProgram (@PG)
+#               Added support for Supplementary alignmnet FLAG
+#               Corrected error in resetting FLAG values
+#               Replaced rand() by runif() in ksort.h
+#               Enclosed reader2fastq example in \dontrun{}
+#  03.Nov.14  Changed nAligns data type to unsigned long long int
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 .onUnload <- function(libpath) { library.dynam.unload("rbamtools", libpath) }
 
 
-# '[.bamRange'<-function(x,i){
-#     return(getNextAlign(x))
-# }
-# 
-# '[<-.bamRange'<-function(x,i){
-#     error("'['.bamRange: Function is not defined")
-# }
-# setMethod("[", "Fastqq", function(x, i, j, drop="missing"){
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Declaration of classes
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Declaration of classes
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-
-
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## File interacting classes:
-## bamReader, bamWriter
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  File interacting classes:
+#  bamReader, bamWriter
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setClass("bamReader", representation(
     filename="character", reader="externalptr", index="externalptr",
@@ -91,14 +85,14 @@ setClass("bamWriter",
                 return(ifelse(is.null(object@writer), FALSE, TRUE))
             })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Header section related classes:
-## bamHeader, bamHeaderText,
-## headerLine,
-## 
-## refSectDict, headerReadGroup,
-## headerProgram
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Header section related classes:
+#  bamHeader, bamHeaderText,
+#  headerLine,
+#  
+#  refSectDict, headerReadGroup,
+#  headerProgram
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setClass("bamHeader",
         representation(header="externalptr"), validity=function(object)
@@ -122,20 +116,20 @@ setClass("refSeqDict",
                    M5="numeric",   SP="character", UR="character"))
 
 setClass("headerReadGroup", representation(
-            nrg="integer",          ## Number of read groups
-            ID="character",         ## Read group identifier
-            CN="character",         ## Name of sequencing center
-            DS="character",         ## Description
-            DT="character",         ## Date
-            FO="character",         ## Flow order
-            KS="character",         ## Array of nucleotide bases
-            LB="character",         ## Library
-            PG="character",         ## Programes used for processing
-            PI="character",         ## Predicted median insert size
-            PL="character",         ## Platform (ILLUMINA,...)
-            PU="character",         ## Platform unit (e.g. lane code)
-            SM="character",         ## Sample (Pool name)
-            ntl="integer"           ## number of taglabs (= 12 (static))
+            nrg="integer",          #  Number of read groups
+            ID="character",         #  Read group identifier
+            CN="character",         #  Name of sequencing center
+            DS="character",         #  Description
+            DT="character",         #  Date
+            FO="character",         #  Flow order
+            KS="character",         #  Array of nucleotide bases
+            LB="character",         #  Library
+            PG="character",         #  Programes used for processing
+            PI="character",         #  Predicted median insert size
+            PL="character",         #  Platform (ILLUMINA,...)
+            PU="character",         #  Platform unit (e.g. lane code)
+            SM="character",         #  Sample (Pool name)
+            ntl="integer"           #  number of taglabs (= 12 (static))
             ),
                                 validity=function(object) {return(TRUE)})
 
@@ -151,10 +145,10 @@ setClass("bamHeaderText",
                     group="headerReadGroup", prog="headerProgram", 
                     com="character"))
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Align related classes:
-## bamAlign, bamRange, alignDepth
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Align related classes:
+#  bamAlign, bamRange, alignDepth
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setClass("bamAlign", 
     representation(align="externalptr"), validity=function(object)
@@ -175,11 +169,276 @@ setClass("alignDepth",
             params="numeric", refname="character"))
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Gap sites related classes:
-## gapList, gapSiteList
-## bamGapList
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Segment Count
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+# Sequence segments: Tiling a single reference sequence (chromosome)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+setClass("seqSegments",
+        representation(
+            # Sequence header
+            seqid = "numeric",
+            seqname = "character",
+            seqlen = "numeric",
+            # Position data
+            margins = "numeric"
+        ),
+        validity = function(object) {
+            if(length(object@seqid)!=1 || 
+                length(object@seqname)!=1 ||
+                length(object@seqlen) !=1)
+            { 
+                message("[validity.seqSegments] Sequence values must have length 1!")
+                return(FALSE)
+            }
+            
+            if(any(object@margins < 0))
+            {
+                message("[validity.seqSegments] No negative margin values allowed!")
+                return(FALSE)
+            }
+            
+            if(any(object@margins > object@seqlen))
+            {
+                message("[validity.seqSegments] Out of bound margins (> seqlen)!")
+                return(FALSE)
+            }
+            
+            return(TRUE)
+        }
+)
+
+seqSegments <- function(bam=NULL, i=1)
+{
+    if(is.null(bam))
+        return( new("seqSegments"))
+    
+    if(!is.character(bam))
+        stop("bam must be character!")
+    
+    if(!file.exists(bam))
+        stop("bam does not exist!")
+    
+    reader <- bamReader(bam)
+    rd <- getRefData(reader)
+    
+    res <- new("seqSegments")
+    res@seqid <- rd$ID[i]
+    res@seqname <- rd$SN[i]
+    res@seqlen <- rd$LN[i]
+    
+    res@margins <- c(1, rd$LN[i])
+    return(res)
+}
+
+setGeneric("margins", function(object) standardGeneric("margins"))
+setMethod("margins", "seqSegments", function(object){
+    return(object@margins)
+})
+
+setGeneric("margins<-", function(object, value) standardGeneric("margins<-"))
+setReplaceMethod("margins", "seqSegments", function(object, value){
+    if(!is.numeric(value))
+        stop("value must be numeric!")
+
+    object@margins <- sort(unique(value))
+    if(object@margins[1] < 0)
+        stop("Negative margin values are not allowed!")
+    
+    if(object@margins[length(object@margins)] > object@seqlen[1])
+        stop("Margin values out of bounds (> seqlen)!")
+    
+    return(object)
+})
+
+setGeneric("addMargins", function(object, value=NULL) standardGeneric("addMargins"))
+setMethod("addMargins", "seqSegments", function(object, value=NULL){
+    
+    if(is.null(value))
+        return(object)
+    
+    if(!is.numeric(value))
+        stop("value must be numeric!")
+    
+    object@margins <- sort(unique(c(object@margins, value)))
+    
+    if(!validObject(object))
+        stop("")
+
+    return(object)
+})
+
+
+setMethod("show", "seqSegments", function(object)
+{
+    bm<-Sys.localeconv()[7]
+    r <-"right"
+    w <- 14
+        
+    cat("An object of class '", class(object), "'.\n", sep="")
+    cat("Reference sequence:\n")
+    cat("Seqid                 : ", format(object@seqid[1],   w=w, j=r), "\n")
+    cat("Seqname               : ", format(object@seqname[1], w=w, j=r), "\n")
+    cat("Seqlen                : ", format(
+            format(object@seqlen[1], big.m=bm), w=w, j=r), "\n")
+    
+    nm <- length(object@margins)
+    
+    if(nm == 0)
+    {
+        cat("Segments number       : 0\n")
+        return(invisible())
+    }
+    
+    cat("Segments number       : ", format(
+        format(nm - 1, big.m=bm),               w=w, j=r), "\n")
+    
+    cat("Segments left  margin : ", format(
+        format(object@margins[1], big.m=bm),    w=w, j=r), "\n")
+    
+    cat("Segments right margin : ", format(
+        format(object@margins[nm], big.m=bm),   w=w, j=r), "\n")
+    
+    # Set output width so that all numbers can be printed at equal width
+    w <- ceiling(log10(object@margins[nm])) + 3
+    if(nm > 1)
+    {
+        cat("Segments :\n")
+        nd <- min((nm - 1), 6)
+        for(i in 1:nd)
+        {
+            cat(i, ": [", 
+                format(format(object@margins[i], big.m=bm), w=w, j=r),
+                ", ",
+                format(format(object@margins[i + 1], big.m=bm), w=w, j=r),
+                ")\n",
+                sep="")
+        }
+    }
+    return(invisible())
+})
+
+
+
+setClass("rangeSegCount",
+        representation(
+            position = "integer",
+            count = "integer",
+            refname = "character",
+            LN = "integer",
+            coords = "numeric",
+            complex = "logical"
+        ),
+        validity = function(object) { return(length(position)==length(count)) }
+)
+
+
+setMethod("show", "rangeSegCount", function(object)
+{
+    o <- object
+    op <- o@coords
+    n <- 6
+    cat("An object of class '", class(o), "'.\n",sep="")
+    bm<-Sys.localeconv()[7]
+    w<-15
+    r<-"right"
+    cat("Refname : ", format(o@refname              , w=w, j=r), "\n", sep="")
+    cat("Seqid   : ", format(format(op[1], big.m=bm), w=w, j=r), "\n", sep="")
+    cat("LN      : ", format(format(o@LN,  big.m=bm), w=w, j=r), "\n", sep="")
+    cat("qrBegin : ", format(format(op[2], big.m=bm), w=w, j=r), "\n", sep="")
+    cat("qrEnd   : ", format(format(op[3], big.m=bm), w=w, j=r), "\n", sep="")
+    cat("Complex : ", format(o@complex              , w=w, j=r), "\n", sep="")
+    cat("\n")
+    print(data.frame(position=o@position[1:n], count=o@count[1:n]))
+    return(invisible())
+})
+
+as.data.frame.rangeSegCount <- function(x, row.names=NULL, optional=FALSE, ...)
+{
+    return(data.frame(position=x@position, 
+                        count=x@count,
+                        row.names=row.names))
+}
+
+setGeneric("rangeSegCount", function(object, 
+                coords=NULL, segments=NULL, 
+                complex=FALSE) standardGeneric("rangeSegCount"))
+
+setMethod("rangeSegCount", "bamReader", 
+    function(object, coords=NULL, segments=NULL, complex=FALSE)
+    {
+        if(!indexInitialized(object))
+            stop("Reader must have initialized index! Use 'load.index'!")
+        
+        if(is.null(coords))
+            stop("coords argument is not optional!")
+        
+        if(!is.numeric(coords))
+            stop("coords must be numeric!")
+        
+        if(length(coords) != 3)
+            stop("coords must have length 3")
+        
+        if(any(coords < 0))
+            stop("coords must not be negative")
+        
+        coords <- as.numeric(coords)
+        
+        if(is.null(segments))
+            stop("segments argument is not optional")
+        
+        if(!is.numeric(segments))
+            stop("segments must be numeric")
+        
+        if(any(segments < 0))
+            stop("segment values must not be negative")
+        
+        segments <- sort(as.integer(segments))
+        
+        if(!is.logical(complex))
+            stop("complex must be logical")
+        
+        res <- .Call("bam_count_segment_aligns",
+                     object@reader, object@index,
+                     coords, segments, 
+                     complex[1], PACKAGE="rbamtools")
+        
+        return(res)
+        
+    }
+)
+
+
+setGeneric("meltDownSegments", 
+           function(object, factor=1) standardGeneric("meltDownSegments"))
+
+setMethod("meltDownSegments", "rangeSegCount", function(object, factor=1)
+{
+    if(!is.numeric(factor))
+        stop("factor must be numeric")
+    
+    if(length(factor) != 1)
+        stop("factor must contain exactly one value")
+    
+    if(factor[1] < 1)
+        stop("factor must be >= 1")
+    
+    factor <- as.integer(factor)
+    
+    res <- .Call("bam_count_segment_melt_down", 
+                 object, factor[1], PACKAGE="rbamtools")
+    return(res)
+})
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Gap sites related classes:
+#  gapList, gapSiteList
+#  bamGapList
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setClass("gapList", 
     representation(list="externalptr"), validity=function(object)
@@ -201,9 +460,9 @@ setClass("bamGapList",
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  Declaration of generics
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   Declaration of generics
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 # Reader associated Generics
 
@@ -223,6 +482,22 @@ setGeneric("getRefData",function(object) standardGeneric("getRefData"))
 
 setGeneric("getRefCoords",function(object, sn) standardGeneric("getRefCoords"))
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Replacement for (deprecated) functions -> .Defunct
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setGeneric("createIndex",function(object,idx_filename)
+                                standardGeneric("createIndex"))
+
+setGeneric("loadIndex", function(object, filename)
+                                standardGeneric("loadIndex"))
+
+setGeneric("indexInitialized", function(object) 
+                                standardGeneric("indexInitialized"))
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Soon deprecated functions (for consistency reasons)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
 setGeneric("create.index",function(object, idx_filename)
                                 standardGeneric("create.index"))
 
@@ -232,11 +507,17 @@ setGeneric("load.index",function(object, filename)
 setGeneric("index.initialized",function(object) 
                                 standardGeneric("index.initialized"))
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
 setGeneric("bamSort",function(object, prefix="sorted",
-            byName=FALSE, maxmem=1e+9) standardGeneric("bamSort"))
+            byName=FALSE, maxmem=1e+9,
+            path=dirname(filename(object))) standardGeneric("bamSort"))
 
 setGeneric("reader2fastq",function(object, filename, which, append=FALSE)
             standardGeneric("reader2fastq"))
+
+setGeneric("readerToFastq", function(object, filename, which, append=FALSE)
+            standardGeneric("readerToFastq"))
 
 setGeneric("bamCopy", function(object, writer, refids, verbose=FALSE)
             standardGeneric("bamCopy"))
@@ -386,9 +667,14 @@ setGeneric("insertPreCurrent",
 setGeneric("moveCurrentAlign",
                 function(object, target) standardGeneric("moveCurrentAlign"))
 
+# Deprecated:
 setGeneric("range2fastq", 
         function(object, filename, which, append=FALSE)
             standardGeneric("range2fastq"))
+
+setGeneric("rangeToFastq", 
+           function(object, filename, which, append=FALSE)
+               standardGeneric("rangeToFastq"))
 
 setGeneric("countNucs", function(object) standardGeneric("countNucs"))
 
@@ -512,6 +798,12 @@ setGeneric("secondaryAlign", function(object)
 setGeneric("secondaryAlign<-", function(object, value)
         standardGeneric("secondaryAlign<-"))
 
+setGeneric("suppAlign", function(object)
+    standardGeneric("suppAlign"))
+
+setGeneric("suppAlign<-", function(object, value)
+    standardGeneric("suppAlign<-"))
+
 setGeneric("flag", function(object) 
         standardGeneric("flag"))
 
@@ -520,9 +812,9 @@ setGeneric("flag<-", function(object, value)
 
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## static functions
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  static functions
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 gc_content <- function(An, Cn, Gn, Tn)
 {
@@ -541,15 +833,15 @@ at_gc_ratio <- function(An, Cn, Gn, Tn)
 
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-## bamReader                                                                 ##
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#  bamReader
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  Opening and closing a BAM-File for reading
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   Opening and closing a BAM-File for reading
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod(f="initialize", signature="bamReader",
             definition=function(.Object, filename)
@@ -584,16 +876,16 @@ bamReader <- function(filename, indexname, idx=FALSE, verbose=0)
         return(reader)
     }
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## use indexname or set default
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  use indexname or set default
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     if(missing(indexname))
         idxfile <- paste(filename, "bai", sep=".")
     else
         idxfile <- indexname
     
-    load.index(reader, idxfile)
+    loadIndex(reader, idxfile)
     
     if(verbose[1]==1)
     {
@@ -633,7 +925,7 @@ setMethod("show","bamReader", function(object)
     cat("Class       : ", format(class(object)  , w=w, j=r)                       , "\n", sep="")
     cat("Filename    : ", format(basename(object@filename), w=w, j=r)             , "\n", sep="")
     cat("File status : ", format(ifelse(isOpen(object), "Open", "Closed"), w=w, j=r), "\n", sep="")
-    cat("Index status: ", format(ifelse(index.initialized(object), "Initialized", "Not initialized"), w=w, j=r), "\n", sep="")
+    cat("Index status: ", format(ifelse(indexInitialized(object), "Initialized", "Not initialized"), w=w, j=r), "\n", sep="")
     
     if(isOpen(object))
     {
@@ -642,22 +934,22 @@ setMethod("show","bamReader", function(object)
     return(invisible())
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End: Opening and closing a BAM-File for reading
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End: Opening and closing a BAM-File for reading
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-##  Header related functions                                                 ##
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#   Header related functions
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  This is one standard Method for creation of bamHeader                    ##
-##  and is used as a simple way to pass a header to a new                    ##
-##  instance of bamWriter                                                    ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   This is one standard Method for creation of bamHeader
+#   and is used as a simple way to pass a header to a new
+#   instance of bamWriter
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod(f="getHeader", signature="bamReader", definition=function(object)
 {
@@ -677,9 +969,9 @@ setMethod(f="getHeaderText", signature="bamReader", definition=function(object)
                                     object@reader, PACKAGE="rbamtools")))
 })
 
-## + + + + + + + + + + + + + + + + + ##
-## getRefCount
-## + + + + + + + + + + + + + + + + + ##
+#  + + + + + + + + + + + + + + + + + # 
+#  getRefCount
+#  + + + + + + + + + + + + + + + + + # 
 setMethod(f="getRefCount", signature="bamReader",
                                             definition=function(object)
 {
@@ -691,9 +983,9 @@ setMethod(f="getRefCount", signature="bamReader",
 })
 
 
-## + + + + + + + + + + + + + + + + + ##
-## getRefData
-## + + + + + + + + + + + + + + + + + ##
+#  + + + + + + + + + + + + + + + + + # 
+#  getRefData
+#  + + + + + + + + + + + + + + + + + # 
 setMethod(f="getRefData", signature="bamReader", definition=function(object)
 {
     if(!isOpen(object))
@@ -704,12 +996,12 @@ setMethod(f="getRefData", signature="bamReader", definition=function(object)
 })
 
 
-## + + + + + + + + + + + + + + + + + ##
-## getRefCoords: Returns coordinates 
-## of entire reference for usage with
-## bamRange, gapList or siteList
-## function.
-## + + + + + + + + + + + + + + + + + ##
+#  + + + + + + + + + + + + + + + + + # 
+#  getRefCoords: Returns coordinates 
+#  of entire reference for usage with
+#  bamRange, gapList or siteList
+#  function.
+#  + + + + + + + + + + + + + + + + + # 
 setMethod(f="getRefCoords",
                         signature="bamReader", definition=function(object,sn)
 {
@@ -730,16 +1022,16 @@ setMethod(f="getRefCoords",
     return(c(ref$ID[id], 0, ref$LN[id]))
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End Header related functions
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End Header related functions
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  Index related functions
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-# create.index
-setMethod(f="create.index", signature="bamReader",
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   Index related functions
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+setMethod(f="createIndex", signature="bamReader",
     definition=function(object,idx_filename)
 {
     if(missing(idx_filename))
@@ -750,8 +1042,7 @@ setMethod(f="create.index", signature="bamReader",
                             path.expand(idx_filename), PACKAGE="rbamtools")))
 })
 
-
-setMethod("load.index", signature="bamReader", 
+setMethod("loadIndex", signature="bamReader", 
                                         definition=function(object,filename)
 {
     if(!is.character(filename))
@@ -760,10 +1051,11 @@ setMethod("load.index", signature="bamReader",
     if(!file.exists(filename))
         stop("Index file \"", filename, "\" does not exist!\n")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Set index Variable in given bamReader object:
-    ## Read object name, create expression string and evaluate in parent frame
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Set index Variable in given bamReader object:
+    #  Read object name, create expression string and evaluate in parent frame
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     reader <- deparse(substitute(object))
     
     extxt <- paste(reader,"@index<-.Call(\"bam_reader_load_index\",\"",
@@ -771,9 +1063,9 @@ setMethod("load.index", signature="bamReader",
     
     eval.parent(parse(text=extxt))
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Return true if bamReader@index!=NULL (parent frame)
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Return true if bamReader@index!=NULL (parent frame)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     extxt <- paste(".Call(\"is_nil_externalptr\",", reader,
                                     "@index,PACKAGE=\"rbamtools\")", sep="")
     
@@ -781,14 +1073,69 @@ setMethod("load.index", signature="bamReader",
 })
 
 
-setMethod("index.initialized", signature="bamReader",
-                            definition=function(object)
+setMethod("indexInitialized", signature="bamReader", definition=function(object)
+{ return(!(.Call("is_nil_externalptr", object@index, PACKAGE="rbamtools"))) })
+
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Deprecated functions
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+setMethod("create.index", "bamReader", function(object, idx_filename)
 {
-    return(!(.Call("is_nil_externalptr", object@index, PACKAGE="rbamtools")))
+    message("[create.index] Will soon be deprecated. Use createIndex.")
+    return(createIndex(object, idx_filename))
+    #.Deprecated(new="createIndex",package="rbamtools")
 })
 
+
+setMethod("load.index", "bamReader", function(object, filename)
+{
+    message("[load.index] Will soon be deprecated. Use loadIndex.")
+    #.Deprecated(new="loadIndex", package="rbamtools")
+    
+    if(!is.character(filename))
+        stop("Filename must be character!\n")
+    
+    if(!file.exists(filename))
+        stop("Index file \"", filename, "\" does not exist!\n")
+    
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Set index Variable in given bamReader object:
+    #  Read object name, create expression string and evaluate in parent frame
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    reader <- deparse(substitute(object))
+    
+    extxt <- paste(reader,"@index<-.Call(\"bam_reader_load_index\",\"",
+                   path.expand(filename), "\",PACKAGE=\"rbamtools\")", sep="")
+    
+    eval.parent(parse(text=extxt))
+    
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Return true if bamReader@index!=NULL (parent frame)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    extxt <- paste(".Call(\"is_nil_externalptr\",", reader,
+                   "@index,PACKAGE=\"rbamtools\")", sep="")
+    
+    return(invisible(!eval.parent(parse(text=extxt))))
+})
+
+
+setMethod("index.initialized", "bamReader", function(object)
+{
+    message("[index.initialized] Will soon be deprecated. Use indexInitialized")
+    #.Deprecated(new="indexInitialized", package="rbamtools")
+    return(indexInitialized(object))
+})
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+# 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
 setMethod(f="bamSort", signature="bamReader",
-        definition=function(object, prefix="sorted", byName=FALSE, maxmem=1e+9)
+        definition=function(object, prefix="sorted", byName=FALSE,
+                    maxmem=1e+9, path=dirname(filename(object)))
 {
     if(!isOpen(object))
         stop("bamReader must be opened!")
@@ -812,16 +1159,18 @@ setMethod(f="bamSort", signature="bamReader",
     message("[bamSort] By Name : ", byName)
     
     .Call("bam_reader_sort_file",
-            object@filename, prefix, maxmem, byName, PACKAGE="rbamtools")
+            object@filename,
+            path.expand(file.path(path,prefix)),
+            maxmem, byName, PACKAGE="rbamtools")
     
     cat("[bamSort] Sorting finished.\n")
     
     return(invisible(paste(prefix, ".bam", sep="")))
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End Index related functions
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End Index related functions
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 # getNextAlign
@@ -838,8 +1187,16 @@ setMethod(f="getNextAlign", signature="bamReader", definition=function(object)
 
 
 
-setMethod("reader2fastq", "bamReader", function(object, filename,
-                                        which, append=FALSE){
+setMethod("reader2fastq", "bamReader", 
+        function(object, filename, which, append=FALSE)
+{
+    message("[reader2fastq] Will soon be deprecated. Use readerToFastq")
+    readerToFastq(object, filename, which, append)
+})
+
+setMethod("readerToFastq", "bamReader", 
+          function(object, filename, which, append=FALSE)
+{
     if(!isOpen(object))
         stop("Reader must be opened!")
     
@@ -848,32 +1205,33 @@ setMethod("reader2fastq", "bamReader", function(object, filename,
     
     if(!is.character(filename))
         stop("'filename' must be character!")
-    
+              
     if(missing(which))
     {
         return(invisible(.Call("bam_reader_write_fastq", object@reader,
-                                    filename, append, PACKAGE="rbamtools")))
+            filename, append, PACKAGE="rbamtools")))
     }else{
         if(!is.numeric(which))
-            stop("[reader2fastq] which argument must be numeric!")
+            stop("'which' argument must be numeric!")
         
         ans <- .Call("bam_reader_write_fastq_index", object@reader, filename,
-                as.integer(sort(unique(which))), append, PACKAGE="rbamtools")
+            as.integer(sort(unique(which))), append, PACKAGE="rbamtools")
         
         if(ans < length(which))
-            message("[reader2fastq] EOF reached.\n")
+            message("[readerToFastq] EOF reached.\n")
         
-        message("[reader2fastq]", ans, "records written.\n")
-        return(invisible(ans))
+        message("[readerToFastq]", ans, "records written.\n")
+            return(invisible(ans))
     }
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Reading gap-lists
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Reading gap-lists
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 setMethod("gapList", "bamReader", function(object, coords)
 {
-    if(!index.initialized(object))
+    if(!indexInitialized(object))
         stop("Reader must have initialized index!")
     
     return(new("gapList", object, coords))
@@ -881,7 +1239,7 @@ setMethod("gapList", "bamReader", function(object, coords)
 
 setMethod("siteList", "bamReader", function(object, coords)
 {
-    if(!index.initialized(object))
+    if(!indexInitialized(object))
         stop("Reader must have initialized index!")
     
     return(new("gapSiteList", object, coords))
@@ -889,7 +1247,7 @@ setMethod("siteList", "bamReader", function(object, coords)
 
 setMethod("bamGapList", "bamReader", function(object)
 {
-    if(!index.initialized(object))
+    if(!indexInitialized(object))
         stop("Reader must have initialized index!")
     
     return(new("bamGapList", object))
@@ -946,12 +1304,12 @@ setMethod("bamCopy", "bamReader", function(object, writer, refids, verbose=FALSE
     if(!isOpen(writer))
         stop("writer is not open! Check 'isOpen'!")
     
-    if(!index.initialized(object))
-        stop("reader must have initialized index! Check 'index.initialized'!")
+    if(!indexInitialized(object))
+        stop("reader must have initialized index! Check 'indexInitialized'!")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Check refids argument: When missing copy all ref's
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Check refids argument: When missing copy all ref's
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     ref <- getRefData(object)
     if(missing(refids))
     {
@@ -967,9 +1325,9 @@ setMethod("bamCopy", "bamReader", function(object, writer, refids, verbose=FALSE
         n <- length(refids)    
     }
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Copy aligns with bamRanges as intermediate buffer
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Copy aligns with bamRanges as intermediate buffer
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     bm <- Sys.localeconv()[7]
     nAligns <- 0
     for(i in 1:n)
@@ -1000,7 +1358,7 @@ setMethod("extractRanges", "bamReader",
     if(!isOpen(object))  
         stop("Provided reader must be opened!")
     
-    if(!index.initialized(object))
+    if(!indexInitialized(object))
         stop("Provided reader must have initialized index!")
     
     if(missing(header))
@@ -1045,25 +1403,26 @@ setMethod("extractRanges", "bamReader",
     }
     bm <- Sys.localeconv()[7]
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## prepare range data
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  prepare range data
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
-    # It is essential for indexing, that all ref-ID's which   #                      
-    # occur in aligns are also (implicitly) present in the    #
-    # reference sequence dictionary (RSD) section.            #
-    #                                                         #
-    # E.g. when there is an align which has refid 4, there    #
-    # must be at least 5 entries in RSD because they are      #
-    # indexed implicitly (that is: there is no entry in RSD   #
-    # which says refid=4).                                    #
-    #                                                         #
-    # Their ID is identified with the numbers                 #
-    # 0 to [(number of Entries in RSD)-1].                    #
-    #                                                         #
-    # Otherwise samtools indexing crashes without warning.    #
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    # It is essential for indexing, that all ref-ID's which
+    # occur in aligns are also (implicitly) present in the
+    # reference sequence dictionary (RSD) section.
+    #
+    # E.g. when there is an align which has refid 4, there
+    # must be at least 5 entries in RSD because they are
+    # indexed implicitly (that is: there is no entry in RSD
+    # which says refid=4).
+    #
+    # Their ID is identified with the numbers
+    # 0 to [(number of Entries in RSD)-1].
+    #
+    # Otherwise samtools indexing crashes without warning.
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     gp <- ranges[, c("seqid", "start", "end")] 
     rd <- getRefData(object)
@@ -1099,9 +1458,9 @@ setMethod("extractRanges", "bamReader",
     new_rd <- merge(renew, rd, by.x="old", by.y="ID")
     nref <- dim(new_rd)[1]
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## create new header
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  create new header
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     htxt <- getHeaderText(header)
     hl <- headerLine(htxt)
@@ -1113,9 +1472,9 @@ setMethod("extractRanges", "bamReader",
     headerLine(htxt) <- hl
     refSeqDict(htxt) <- rsd
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Writing aligns
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Writing aligns
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     cat("[extractRanges] Writing aligns to temporary file '", 
                                     unsort_filename, "'.\n", sep="")
@@ -1139,9 +1498,9 @@ setMethod("extractRanges", "bamReader",
     
     bamClose(writer)
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Sorting BAM output file
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Sorting BAM output file
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     cat("[extractRanges] Sorting:\n")
     nread <- bamReader(unsort_filename)
@@ -1150,13 +1509,13 @@ setMethod("extractRanges", "bamReader",
     bamSort(nread, prefix=file_prefix)
     bamClose(nread)
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Creating index for ouput file
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Creating index for ouput file
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     message("[extractRanges] Creating index '", basename(idxname), "'.", sep="")
     
     nread <- bamReader(filename)
-    create.index(nread, idx_filename=idxname)
+    createIndex(nread, idx_filename=idxname)
     message("[extractRanges] Finished.\n")
     message("[extractRanges] You may want to delete file '", 
                                     basename(unsort_filename), "'.\n", sep="")
@@ -1167,8 +1526,8 @@ setMethod("extractRanges", "bamReader",
 
 setMethod("bamCount", signature="bamReader", definition=function(object, coords)
 {
-    if(!index.initialized(object))
-        stop("[bamCount] reader must have initialized index! Use 'load.index'!")
+    if(!indexInitialized(object))
+        stop("[bamCount] reader must have initialized index! Use 'loadIndex'!")
     
     if(missing(coords))
         stop("[bamCount] coords is not optional!")
@@ -1189,19 +1548,19 @@ setMethod("bamCountAll", "bamReader", function(object, verbose=FALSE)
     if(!isOpen(object))
         stop("reader is not open! Check 'isOpen'!")
     
-    if(!index.initialized(object))
-        stop("reader must have initialized index! Check 'index.initialized'!")
+    if(!indexInitialized(object))
+        stop("reader must have initialized index! Check 'indexInitialized'!")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Check refids argument: When missing copy all ref's
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Check refids argument: When missing copy all ref's
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     ref <- getRefData(object)
     nr <- nrow(ref)
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Count first refid
-    ## and read size and names of result
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Count first refid
+    #  and read size and names of result
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     if(verbose)
         cat("[bamCountAll] Counting ", ref$SN[1],  "\t[ 1/", nr, "]", sep="")
     count <- bamCount(object, c(ref$ID[1], 0, ref$LN[1]))
@@ -1251,7 +1610,7 @@ setMethod("nucStats", "bamRange", function(object)
                     )
     
     refname <- .Call("bam_range_get_refname",
-                                   object@range, PACKAGE="rbamtools")
+                        object@range, PACKAGE="rbamtools")
     
     if(!is.null(refname))
         row.names(dfr) <- refname
@@ -1265,8 +1624,10 @@ setMethod("nucStats", "bamReader", function(object)
 {
     if(!isOpen(object))
         stop("Reader must be open (check 'isOpen')!")
-    if(!index.initialized(object))
-        stop("Reader must have initialized index (use 'load.index')!")
+    if(!indexInitialized(object))
+        stop("Reader must have initialized index (use 'loadIndex')!")
+    
+    
     ref <- getRefData(object)
     n <- nrow(ref)
     m <- matrix(0, nrow=n, ncol=5)
@@ -1296,10 +1657,11 @@ setMethod("nucStats", "character",
     
     if(!is.character(idxInfiles))
         stop("[nucStats] idxInfiles must be character!")
+    
     if(any(!file.exists(idxInfiles)))
         stop("[nucStats] Files (idxInfiles) not found!")
     
-    n <- length(object)  
+    n <- length(object)
     if(length(idxInfiles)!=n)
         stop("[nucStats] infiles and idxInfiles must have same length!")
     
@@ -1309,8 +1671,8 @@ setMethod("nucStats", "character",
     for(i in 1:n)
     {
         reader <- bamReader(object[i])
-        load.index(reader, idxInfiles[i])
-        nc <- nucStats((reader))
+        loadIndex(reader, idxInfiles[i])
+        nc <- nucStats(reader)
         res[i, ] <- lapply(nc[, 1:6], sum)
     }
     res$gcc <- gc_content(res$A, res$C, res$G, res$T)
@@ -1319,13 +1681,13 @@ setMethod("nucStats", "character",
     return(res)
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-## bamHeader                                                                 ##
-## Description: See SAM File Format Specification (v1.4-r985)                ##
-## September 7, 2011, Section 1.3                                            ##
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#  bamHeader
+#  Description: See SAM File Format Specification (v1.4-r985)
+#  September 7, 2011, Section 1.3
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 setMethod("initialize", "bamHeader", function(.Object, extptr)
@@ -1368,9 +1730,9 @@ setMethod("show", "bamHeader", function(object)
     }
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## This is the main function for creating an instance of bamWriter           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  This is the main function for creating an instance of bamWriter
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod("bamWriter", "bamHeader", function(x, filename)
 {
@@ -1380,11 +1742,12 @@ setMethod("bamWriter", "bamHeader", function(x, filename)
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-# headerLine: Represents two entries: Format version (VN) and sorting order(SO)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+# headerLine: Represents two entries: 
+# Format version (VN) and sorting order(SO)
 # Valid format for VN : /^[0-9]+\.[0-9]+$/.
 # Valid entries for SO: unknown (default),  unsorted,  queryname,  coordinate.
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod(f="initialize", signature="headerLine", 
                             definition=function(.Object, hl="", delim="\t")
@@ -1401,33 +1764,33 @@ setMethod(f="initialize", signature="headerLine",
         return(.Object)
     }
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ##  Split input string into tags
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #   Split input string into tags
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     tags <- unlist(strsplit(hl, delim))
     
     #  Three tags!
     if(length(tags)!=3)
         stop("hl must contain three tags separated by '", delim, "'!\n")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ##  First  tag: '@HD'
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #   First  tag: '@HD'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     if(tags[1]!="@HD")
         stop("First tag of string must be @HD!\n")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ##  Second tag: 'VN'
-    ##  TODO: Check Accepted format: /^[0-9]+\.[0-9]+$/.  
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #   Second tag: 'VN'
+    #   TODO: Check Accepted format: /^[0-9]+\.[0-9]+$/.  
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     if(substr(tags[2], 1, 2)!="VN")
         stop("Second tag of string must be VN!\n")
     
     .Object@VN=substring(tags[2], 4)
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Third   tag: 'SO'
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Third   tag: 'SO'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     if(substr(tags[3], 1, 2)!="SO")
         stop("Third tag of string must be SO!\n")
     
@@ -1493,34 +1856,34 @@ setMethod("show", "headerLine", function(object)
     cat("VN: ", object@VN, "\nSO: ", object@SO, "\n", sep="")
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## End headerLine
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  End headerLine
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  refSeqDict: Reference Sequence Dictionary                                ##
-##  Represents a variable number of Ref Seqs                                 ##
-##  Valid Members (Entries for each sequence, stored in a data.frame):       ##
-##  SN Reference sequence name                                               ##
-##  LN Reference sequence length                                             ##
-##  AS Genome assembly identifier                                            ##
-##  M5 MD5 checksum of the sequence                                          ##
-##  SP Species                                                               ##
-##  UR URI of the sequence                                                   ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   refSeqDict: Reference Sequence Dictionary
+#   Represents a variable number of Ref Seqs
+#   Valid Members (Entries for each sequence, stored in a data.frame):
+#   SN Reference sequence name
+#   LN Reference sequence length
+#   AS Genome assembly identifier
+#   M5 MD5 checksum of the sequence
+#   SP Species
+#   UR URI of the sequence
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod(f="initialize", signature="refSeqDict", 
                             definition=function(.Object, hsq="", delim="\t")
 {
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Parses Reference sequence dictionary of header-text
-    ## hsq= Vector of characters,  each representing one Ref-Sequence
-    ## length(hsq) = number of Ref-Sequences
-    ## Each Ref-string contains 'internally' [tab] delimited seqments:
-    ##               "SN:ab\tLN:12\tAS:ab\tM5:12\tSP:ab\tUR:ab"
-    ## It's allowed to skip segments
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Parses Reference sequence dictionary of header-text
+    #  hsq= Vector of characters,  each representing one Ref-Sequence
+    #  length(hsq) = number of Ref-Sequences
+    #  Each Ref-string contains 'internally' [tab] delimited seqments:
+    #                "SN:ab\tLN:12\tAS:ab\tM5:12\tSP:ab\tUR:ab"
+    #  It's allowed to skip segments
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     if(!is.character(hsq))
         stop("[refSeqDict.initialize] hsq must be character!")
@@ -1612,8 +1975,8 @@ setMethod(f="dim", signature="refSeqDict", definition=function(x)
 
 setMethod("removeSeqs", signature="refSeqDict", definition=function(x, rows)
 {
-    ## Removes given rows (=Sequences) from Dictionary
-    ## so they are excluded from header
+    #  Removes given rows (=Sequences) from Dictionary
+    #  so they are excluded from header
     n <- length(x@SN)
     if(!is.numeric(rows))  
         stop("[removeSeqs.refSeqDict] Sequence indices must be numeric!")
@@ -1684,10 +2047,10 @@ setMethod("addSeq", signature="refSeqDict",
 setMethod("getHeaderText", signature="refSeqDict", 
                                     definition=function(object, delim="\t")
 {
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Returns Ref Data String (can be used for creating new BAM 
-    ## file via bamWriter)
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Returns Ref Data String (can be used for creating new BAM 
+    #  file via bamWriter)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
                                         
     labels <- c("SN", "LN", "AS", "M5", "SP", "UR")
     n <- length(object@SN)
@@ -1718,8 +2081,8 @@ setMethod("getHeaderText", signature="refSeqDict",
 })
 
 
-## Return first or last part of refSeqDict data.frame
-## S3 Generic is supplied via importFrom in NAMESPACE
+#  Return first or last part of refSeqDict data.frame
+#  S3 Generic is supplied via importFrom in NAMESPACE
 
 setMethod("head", "refSeqDict", function(x, n=6L, ...)
 {
@@ -1768,51 +2131,51 @@ setMethod("show", "refSeqDict", function(object)
     }
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End refSeqDict
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End refSeqDict
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## headerReadGroup
-## ReadGroup
-## ID Read Group identifier
-## CN Name of sequencing center
-## DS Description
-## FO Flow order
-## KS Nucleotides corresponding to key sequence of each read
-## LB Library
-## PG Programs used for processing the Read Group
-## PI Predicted median insert size
-## PL Sequencing Platform:
-##    CAPILLARY, LS454, ILLUMINA, SOLID, HELICOS, IONTORRENT or PACBIO
-## SM Sample name.
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  headerReadGroup
+#  ReadGroup
+#  ID Read Group identifier
+#  CN Name of sequencing center
+#  DS Description
+#  FO Flow order
+#  KS Nucleotides corresponding to key sequence of each read
+#  LB Library
+#  PG Programs used for processing the Read Group
+#  PI Predicted median insert size
+#  PL Sequencing Platform:
+#     CAPILLARY, LS454, ILLUMINA, SOLID, HELICOS, IONTORRENT or PACBIO
+#  SM Sample name.
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 
 setMethod(f="initialize", signature="headerReadGroup",  
                                 definition=function(.Object, hrg="", delim="\t")
 {
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Parses Read-Group part of Header data. See Sam Format 
-    ## Specificatioin 1.3 (Header Section)
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Parses Read-Group part of Header data. See Sam Format 
+    #  Specificatioin 1.3 (Header Section)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     if(!is.character(hrg))
         stop("[headerReadGroup.initialize] Argument must be string.\n")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Samtools file format says: Unordered multiple @RG lines are allowed
-    ## Each @RG segment comes as one string in hrg
-    ## Number of @RG segments = length(hrg)
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Samtools file format says: Unordered multiple @RG lines are allowed
+    #  Each @RG segment comes as one string in hrg
+    #  Number of @RG segments = length(hrg)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Split hgr into multiple @RG fragments
-    ## In effect, hrg can be either given as vector with length > 1
-    ## or as single vector with @RG entries separated by '\n'
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Split hgr into multiple @RG fragments
+    #  In effect, hrg can be either given as vector with length > 1
+    #  or as single vector with @RG entries separated by '\n'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     hrg <- unlist(strsplit(hrg, "\n"))
     
     .Object@nrg <- length(hrg)
@@ -1831,10 +2194,10 @@ setMethod(f="initialize", signature="headerReadGroup",
     .Object@PU <- character(.Object@nrg)
     .Object@SM <- character(.Object@nrg)
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Allows for empty object
-    ## hrg="" or character(0)
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Allows for empty object
+    #  hrg="" or character(0)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     if((length(hrg)==1 && nchar(hrg)==0) || length(hrg)==0)
     {
         .Object@nrg <- 0L
@@ -1846,16 +2209,16 @@ setMethod(f="initialize", signature="headerReadGroup",
     
     for(i in 1:(.Object@nrg))
     {
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-        ## Split string into fields
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
+        #  Split string into fields
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
         tags <- unlist(strsplit(hrg[i], delim))
         
         if(tags[1] != "@RG")
             stop("First item of string must be @RG!\n")
         
-        ## TODO: Routine does not check for:
-        ## 'Each @RG line must have a unique ID.' (SAM file format)
+        #  TODO: Routine does not check for:
+        #  'Each @RG line must have a unique ID.' (SAM file format)
         
         tags <- tags[-1]
         ntags <- length(tags)
@@ -1965,7 +2328,7 @@ setMethod("getHeaderText", signature="headerReadGroup",
     rgtxt <- character(n)
     for(i in 1:n)
     {
-        ## ID should always be present
+        #  ID should always be present
         txt <- paste(delim,"ID:",object@ID[i], sep="")
         
         if(nchar(object@CN[i]) > 0)
@@ -2062,9 +2425,9 @@ setMethod("setVal", signature="headerReadGroup",
     if(!is.character(members))
         stop("Member name must be character!\n")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Check for valid values list
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Check for valid values list
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     if(!is.list(values))
         stop("Values must be given as list object")
@@ -2075,9 +2438,9 @@ setMethod("setVal", signature="headerReadGroup",
     if(any(lapply(values,length)!=object@nrg))
         stop("Length of values must equal number of read groups!")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Check for valid members entries
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Check for valid members entries
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     tagLabs <- c("ID", "CN", "DS", "DT", "FO", "KS", "LB", "PG", "PI", 
                                                             "PL", "PU", "SM")
     
@@ -2090,9 +2453,9 @@ setMethod("setVal", signature="headerReadGroup",
     }
     
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Create insertion code as string and parse in parent environment
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Create insertion code as string and parse in parent environment
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     n <- length(members)
     obj <- deparse(substitute(object))
     for(i in 1:n)
@@ -2145,15 +2508,15 @@ setMethod("addReadGroup", signature="headerReadGroup",
     if(is.na(mtc[1]))
        stop("There must be an ID given for new read group")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Increase number of read groups by 1
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Increase number of read groups by 1
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     n <- object@nrg
     object@nrg <- n + 1L
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Insert ID tag
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Insert ID tag
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     if(n == 0)
     {
         object@ID <- l[[mtc[1]]]
@@ -2161,9 +2524,9 @@ setMethod("addReadGroup", signature="headerReadGroup",
         object@ID <- c(object@ID, l[[mtc[1]]])        
     }
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Eventually insert other tags
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Eventually insert other tags
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     ins <- function(o, i)
     {
         if(!is.na(mtc[i]))
@@ -2212,23 +2575,23 @@ setMethod("addReadGroup", signature="headerReadGroup",
 
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End headerReadGroup
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End headerReadGroup
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## headerProgram
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  headerProgram
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 setMethod(f="initialize", signature="headerProgram", 
-          definition=function(.Object, hp="", delim="\t")
+                        definition=function(.Object, hp="", delim="\t")
 {
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Parses Program part of Header data.
-    ## See Sam Format Specificatioin 1.3 (Header Section)
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Parses Program part of Header data.
+    #  See Sam Format Specificatioin 1.3 (Header Section)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     .Object@l <- list()
     
     if(!is.character(hp))
@@ -2238,15 +2601,15 @@ setMethod(f="initialize", signature="headerProgram",
     if((length(hp)==1 && nchar(hp)==0)||length(hp)==0)
         return(.Object)
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Split string into fields
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Split string into fields
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     tags <- unlist(strsplit(hp, delim))
     if(tags[1]!="@PG")
         stop("[headerProgram.initialize] First item of string must be @PG!\n")
     
     tags <- tags[-1]
-    tagLabs <- c("ID", "PN", "CL", "PP", "VN")
+    tagLabs <- c("ID", "PN", "CL", "PP", "DS", "VN")
     n <- length(tags)
     for(i in 1:n)
     {
@@ -2278,7 +2641,7 @@ setMethod("getVal", signature="headerProgram",
     if(!is.character(member))
         stop("[getVal.headerProgram] Member must be character!\n")
     
-    tagLabs <- c("ID", "PN", "CL", "PP", "VN")
+    tagLabs <- c("ID", "PN", "CL", "PP", "DS", "VN")
     mtc <- match(member[1], tagLabs)
     
     if(is.na(mtc))
@@ -2296,7 +2659,7 @@ setMethod("setVal", signature="headerProgram",
     if(length(members)!=length(values))
         stop("Members and values must have same length!\n")
     
-    tagLabs <- c("ID", "PN", "CL", "PP", "VN")
+    tagLabs <- c("ID", "PN", "CL", "PP", "DS", "VN")
     mtc <- match(members, tagLabs)
     if(any(is.na(mtc)))
         stop("Members must be valid Program Entries (See SAM Format Specification 1.3!\n")
@@ -2330,43 +2693,43 @@ setMethod("show", "headerProgram", function(object)
     return(invisible())
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End headerProgram
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End headerProgram
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  bamHeaderText: Represents and manages textual version of bamHeader       ##
-##  See SAM Format Specification (v1.4-r985)                                 ##
-##                                                                           ##
-##  Contains header Segments :                                               ##
-##   head  = headerLine        : @HD Header Line                             ##
-##   dict  = refSeqDict        : @SQ Reference Sequence dictionary           ##
-##   group = headerReadGroup   : @RG Read Group                              ##
-##   prog  = headerProgram     : @PG Program                                 ##
-##                                                                           ##
-##   TODO:                                                                   ##
-##   com   = headerComment     : @CO One-line text comment                   ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   bamHeaderText: Represents and manages textual version of bamHeader
+#   See SAM Format Specification (v1.4-r985)
+#
+#   Contains header Segments :
+#    head  = headerLine        : @HD Header Line
+#    dict  = refSeqDict        : @SQ Reference Sequence dictionary
+#    group = headerReadGroup   : @RG Read Group
+#    prog  = headerProgram     : @PG Program
+#
+#    TODO:
+#    com   = headerComment     : @CO One-line text comment
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 #  Class definition and creational routines for bamHeaderText
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 setMethod(f="initialize", signature="bamHeaderText", 
                                 definition=function(.Object, bh="", delim="\n")
 {
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Parses Header data (as reported by getHeaderText)
-    ## See Sam Format Specification 1.3 (Header Section)
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Parses Header data (as reported by getHeaderText)
+    #  See Sam Format Specification 1.3 (Header Section)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     if(!is.character(bh))
         stop("[bamHeaderText.initialize] Argument must be string.\n")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Create empty header Set (so it's legal to call getHeaderText()')
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Create empty header Set (so it's legal to call getHeaderText()')
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     if(length(bh)==1 && nchar(bh)==0)
     {
         .Object@head <- new("headerLine")
@@ -2376,13 +2739,13 @@ setMethod(f="initialize", signature="bamHeaderText",
         return(.Object)
     }
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Split input string: Each fragment contains data for one header segment
-    ##
-    ## Identification of tags must be restricted on prefix 
-    ## because there may be @RG entries present inside program segment
-    ## (used as command line argument e.g. for aligner)
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Split input string: Each fragment contains data for one header segment
+    # 
+    #  Identification of tags must be restricted on prefix 
+    #  because there may be @RG entries present inside program segment
+    #  (used as command line argument e.g. for aligner)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     bht <- unlist(strsplit(bh, split=delim))
     bht_pre <- substr(bht,1,3)
     
@@ -2452,13 +2815,13 @@ bamHeaderText <- function(head=NULL, dict=NULL, group=NULL, prog=NULL, com=NULL)
     return(invisible(bh))
 }
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End: Class definition and creational routines for bamHeaderText
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End: Class definition and creational routines for bamHeaderText
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  Public accessors for member objects for bamHeaderText
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   Public accessors for member objects for bamHeaderText
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 setMethod(f="headerLine", signature="bamHeaderText", 
                             definition=function(object) {return(object@head)})
 
@@ -2510,9 +2873,9 @@ setReplaceMethod("headerProgram", "bamHeaderText", function(object, value)
     return(object)
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End: Public accessors for member objects for bamHeaderText
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End: Public accessors for member objects for bamHeaderText
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 
@@ -2550,12 +2913,12 @@ setMethod("bamHeader", "bamHeaderText",  function(object)
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-## bamWriter class                                                           ##
-## Encapsulates an write-opened Connection to a BAM-file.                    ##
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#  bamWriter class
+#  Encapsulates an write-opened Connection to a BAM-file.
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 setMethod(f="initialize",  signature="bamWriter", 
@@ -2569,7 +2932,7 @@ setMethod(f="initialize",  signature="bamWriter",
     
     .Object@filename <- filename
     .Object@writer <- .Call("bam_writer_open", header@header, 
-                                    filename, PACKAGE="rbamtools")
+                                path.expand(filename), PACKAGE="rbamtools")
     
     return(.Object)
 })
@@ -2616,11 +2979,11 @@ setMethod(f="bamSave", signature="bamWriter",
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-## gapList                                                                   ##
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#  gapList
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod(f="initialize", "gapList", 
                 definition=function(.Object, reader, coords, verbose=FALSE)
@@ -2631,7 +2994,7 @@ setMethod(f="initialize", "gapList",
         stop("reader must be an instance of bamReader!\n")
     }
     
-    if(length(coords)!=3)
+    if(length(coords) != 3)
         stop("coords must be 3-dim numeric (ref, start, stop)!\n")
     
     if(is.null(reader@index))
@@ -2671,11 +3034,11 @@ setMethod("show", "gapList", function(object)
     return(invisible())
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-## gapSiteList                                                               ##
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#  gapSiteList
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 setMethod(f="initialize", "gapSiteList", 
@@ -2687,7 +3050,7 @@ setMethod(f="initialize", "gapSiteList",
     if(!is(reader, "bamReader"))
         stop("reader must be an instance of bamReader!\n")
     
-    if(length(coords)!=3)
+    if(length(coords) != 3)
         stop("coords must be 3-dim numeric (ref, start, stop)!\n")
     
     if(is.null(reader@index))
@@ -2739,11 +3102,11 @@ merge.gapSiteList <- function(x, y, ...)
 }
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-## bamGapList                                                                #
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#  bamGapList
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 setMethod(f="initialize", "bamGapList", definition=function(.Object, reader)
@@ -2766,16 +3129,16 @@ setMethod(f="initialize", "bamGapList", definition=function(.Object, reader)
                         ref$LN, PACKAGE="rbamtools")
     
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## filter refdata for existing lists
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  filter refdata for existing lists
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     sm <- .Call("gap_site_ll_get_summary_df", .Object@list, PACKAGE="rbamtools")
     mtc <- match(ref$ID, sm$ID)
     .Object@refdata <- ref[!is.na(mtc), ]
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Re-enumerate ID's to 1:n
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Re-enumerate ID's to 1:n
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     .Object@refdata$ID <- .Call("gap_site_ll_reset_refid", 
                                         .Object@list, PACKAGE="rbamtools")
     
@@ -2872,6 +3235,9 @@ readPooledBamGaps <- function(infiles, idxInfiles=paste(infiles, ".bai", sep="")
     if(!is.character(idxInfiles))
         stop("idxInFiles must be character!")
     
+    if(any(!file.exists(idxInfiles)))
+        stop("idxInfiles not found!")
+    
     n <- length(infiles)  
     if(length(idxInfiles)!=n)
         stop("infiles and idxInfiles must have same length!")
@@ -2884,11 +3250,11 @@ readPooledBamGaps <- function(infiles, idxInfiles=paste(infiles, ".bai", sep="")
         if(!file.exists(idxInfiles[i]))
         {
             message("[readPooledBamGaps] Creating BAM-index.", appendLF=FALSE)
-            create.index(reader, idxInfiles[i])
+            createIndex(reader, idxInfiles[i])
             message("Finished.")
         }
         
-        load.index(reader, idxInfiles[i])
+        loadIndex(reader, idxInfiles[i])
         message("[readPooledBamGaps] (",
                     format(i, width=2), "/", n, ")", appendLF=FALSE)
         
@@ -2917,42 +3283,46 @@ readPooledBamGapDf <- function(infiles, idxInfiles=paste(infiles, ".bai", sep=""
 }
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-## bamRange                                                                  ##
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#  bamRange
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Encapsulates a bunch of Alignment datasets that typically have been       ##
-## read from a defined reference region in a BAM-file.                       ##
-## Technically,  the alignments are stored in a (C-implemented) double linked##
-## list.                                                                     ##
-## bamRange objects can be created by a reading procedure on an indexed      ##
-## BAM-file. The alignments can be iterated, readed, written, deleted and    ##
-## added. bamRange objects can be written to a BAM-file via an Instance      ##
-## of bamWriter.                                                             ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## bamRange parameters:                                                      ##
-## 1: seqid      : 0-based index of seqid                                    ##
-## 2: qrBegin    : 0-based left boundary of query region (query range begin) ##
-## 3: qrEnd      : 0-based right boundary of query region (query range end)  ##
-## 4: complex    : 0= all aligns included, 1= only aligns with n_cigar > 1   ##
-##                                                   included                ##
-## 5: rSeqLen    : Length of reference sequence (from getRefData)            ##
-## 6: qSeqMinLen : Minimum of query sequence length (= read length)          ##
-## 7: qSeqMaxLen : Maximum of query sequence length (= read length)          ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Encapsulates a bunch of Alignment datasets that typically have been
+#  read from a defined reference region in a BAM-file.
+#  Technically,  the alignments are stored in a (C-implemented) double linked
+#  list.
+#  bamRange objects can be created by a reading procedure on an indexed
+#  BAM-file. The alignments can be iterated, readed, written, deleted and
+#  added. bamRange objects can be written to a BAM-file via an Instance
+#  of bamWriter.
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  bamRange parameters:
+#  1: seqid      : 0-based index of seqid
+#  2: qrBegin    : 0-based left boundary of query region (query range begin)
+#  3: qrEnd      : 0-based right boundary of query region (query range end)
+#  4: complex    : 0= all aligns included, 1= only aligns with n_cigar > 1
+#                                                    included
+#  5: rSeqLen    : Length of reference sequence (from getRefData)
+#  6: qSeqMinLen : Minimum of query sequence length (= read length)
+#  7: qSeqMaxLen : Maximum of query sequence length (= read length)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
-bamRange <- function(reader=NULL, coords=NULL, complex=FALSE)
+bamRange <- function(object=NULL, coords=NULL, complex=FALSE)
 {
-    if(!is.null(reader))
-    {
-        if(!index.initialized(reader))
-            stop("reader must have initialized index! Use 'load.index'!")
-    }
-    return(new("bamRange", reader, coords, complex))
+    if(is.null(object))
+        return(new("bamRange", NULL, NULL, FALSE))
+    
+    if(!is(object, "bamReader"))
+        stop("object must be of class 'bamReader'!")
+    
+    if(!indexInitialized(object))
+        stop("reader must have initialized index! Use 'loadIndex'!")
+
+    return(new("bamRange", object, coords, complex))
 }
 
 
@@ -2960,23 +3330,28 @@ setMethod(f="initialize", signature="bamRange",
           definition=function(.Object, reader=NULL, coords=NULL, complex=FALSE)
 { 
 
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ##  Create empty range
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #   Create empty range
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     if(is.null(reader))
     {
         .Object@range <- .Call("bam_range_init", PACKAGE="rbamtools")
         return(.Object)
     }
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ##  Create range from bam-file
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #   Create range from bam-file
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     if(!is(reader, "bamReader"))
         stop("reader must be an instance of bamReader!")
     
-    if(length(coords)!=3)
-        stop("coords must be numeric with length=3 (ref, start, stop)!")
+    # coords may either be missing or 3 entries are needed
+    if(!is.null(coords))
+    {
+        if(length(coords)!=3)
+            stop("coords must be numeric with length=3 (ref, start, stop)!")
+    }
+
     
     if(is.null(reader@index))
         stop("bamReader must have initialized index!")
@@ -2984,11 +3359,11 @@ setMethod(f="initialize", signature="bamRange",
     if(!is(complex, "logical"))
         stop("complex must be logical!")
     
-    if(length(complex)>1)
+    if(length(complex) > 1)
         stop("complex must have length 1!")
     
-    if(!index.initialized(reader))
-        stop("reader must have initialized index! Use 'load.index'!")
+    if(!indexInitialized(reader))
+        stop("reader must have initialized index! Use 'loadIndex'!")
     
     .Object <- .Call("bam_range_fetch", reader@reader, 
                     reader@index, trunc(coords), complex, PACKAGE="rbamtools")
@@ -3157,11 +3532,11 @@ setMethod("moveCurrentAlign", signature="bamRange",
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Rudimentary subsetting operator:
-## Does not change the order of elements, just returns subset
-## Therefore sorts given index i
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Rudimentary subsetting operator:
+#  Does not change the order of elements, just returns subset
+#  Therefore sorts given index i
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod("[", signature="bamRange", function(x, i)
 {
@@ -3179,11 +3554,18 @@ setMethod("[", signature="bamRange", function(x, i)
 setMethod("range2fastq", signature="bamRange",
     definition=function(object, filename, which, append=FALSE)
 {
+    message("[range2fastq] Function is deprecated. Use rangeToFastq.")
+    return(rangeToFastq(object, filename, which, append))
+})
+
+setMethod("rangeToFastq", signature="bamRange",
+    definition=function(object, filename, which, append=FALSE)
+{
     if(!is.character(filename))
-        stop("[range2fastq] filename must be character!")
+        stop("'filename' must be character!")
     
     if(!is.logical(append))
-        stop("[range2fastq] append must be logical!")
+        stop("'append' must be logical!")
     
     if(missing(which))
     {
@@ -3191,13 +3573,13 @@ setMethod("range2fastq", signature="bamRange",
                             append, PACKAGE="rbamtools")
     }else{
         if(!is.numeric(which))
-            stop("[range2fastq] which must be numeric!")
+            stop("'which' must be numeric!")
         
         mx <- max(which)
         
         if(mx>size(object))
         {
-            cat("[range2fastq] Maximum index (", mx,
+            cat("[rangeToFastq] Maximum index (", mx,
                     ") is greater than size of range (",
                     size(object), ")!\n", sep="")
         }
@@ -3206,14 +3588,14 @@ setMethod("range2fastq", signature="bamRange",
             object@range, filename, as.integer(sort(unique(which))),
             append, PACKAGE="rbamtools")
         
-        cat("[range2fastq]", written, "records written.\n")
+        cat("[rangeToFastq]", written, "records written.\n")
     }
     return(invisible())
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Functions to read and display phred qualities from bamRange
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Functions to read and display phred qualities from bamRange
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod("getQualDf", "bamRange", function(object, prob=FALSE, ...)
 {
@@ -3251,14 +3633,14 @@ setMethod("getQualQuantiles", "bamRange", function(object, quantiles, ...)
     
     quantiles <- sort(unique(round(quantiles, 2)))
 
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Count qual values for each sequence position
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Count qual values for each sequence position
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     qdf <- .Call("bam_range_get_qual_df", object@range, PACKAGE="rbamtools")
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Convert integer counts into column-wise relative values
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Convert integer counts into column-wise relative values
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     rel <- function(x)
     {
         xs <- sum(x)
@@ -3270,10 +3652,10 @@ setMethod("getQualQuantiles", "bamRange", function(object, quantiles, ...)
     qrel <- data.frame(lapply(qdf, rel))
     names(qrel) <- names(qdf)
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Walk through each column and extract row number
-    ## for given quantile values
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Walk through each column and extract row number
+    #  for given quantile values
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     res <- .Call("get_col_quantiles", quantiles, qrel, PACKAGE="rbamtools")
     return(res)
 })
@@ -3308,27 +3690,27 @@ setMethod("plotQualQuant",  "bamRange",  function(object)
 
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-## alignDepth                                                                ##
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#  alignDepth
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## alignDepth parameters:                                                    ##
-## - - bamRange derived - -                                                  ##
-## 1: seqid      : 0-based index of seqid                                    ##
-## 2: qrBegin    : 0-based left boundary of query region (query range begin) ##
-## 3: qrEnd      : 0-based right boundary of query region (query range end)  ##
-## 4: complex    : 0= all aligns included, 1= only aligns with n_cigar > 1   ##
-##                                                   included                ##
-## 5: rSeqLen    : Length of reference sequence (from getRefData)            ##
-## 6: qSeqMinLen : Minimum of query sequence length (= read length)          ##
-## 7: qSeqMaxLen : Maximum of query sequence length (= read length)          ##
-## - - alignDepth proprietary - -                                            ##
-## 6: gap     : 0=all aligns counted, 1=only gap adjacent match regions      ##
-## counted                                                                   ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  alignDepth parameters:
+#  - - bamRange derived - -
+#  1: seqid      : 0-based index of seqid
+#  2: qrBegin    : 0-based left boundary of query region (query range begin)
+#  3: qrEnd      : 0-based right boundary of query region (query range end)
+#  4: complex    : 0= all aligns included, 1= only aligns with n_cigar > 1
+#                                                    included
+#  5: rSeqLen    : Length of reference sequence (from getRefData)
+#  6: qSeqMinLen : Minimum of query sequence length (= read length)
+#  7: qSeqMaxLen : Maximum of query sequence length (= read length)
+#  - - alignDepth proprietary - -
+#  6: gap     : 0=all aligns counted, 1=only gap adjacent match regions
+#  counted
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 
@@ -3387,9 +3769,9 @@ setMethod("plotAlignDepth", "alignDepth",
                     col="grey50", fill="grey90", grid=TRUE, 
                     box.col="grey20", box.border="grey80", ... )
 {
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Start and end positions for exon - rectangles
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Start and end positions for exon - rectangles
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     
     if(!is.null(start))
     {
@@ -3404,25 +3786,25 @@ setMethod("plotAlignDepth", "alignDepth",
     }
     
     
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-    ## Prepare align depth values for polygon plotting and
-    ## logarithmic scale
-    ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    #  Prepare align depth values for polygon plotting and
+    #  logarithmic scale
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
     nx <- length(object@pos)
     x <- c(object@pos[1], object@pos, object@pos[nx])
     y <- c(1, ifelse(object@depth == 0, 1, object@depth), 1)
     
     
-    ## 
+    #  
     if(is.null(xlim))
         xlim <- c(x[1], x[nx])
     
     
     if(!is.null(start))
     {
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-        ## Prepare plot area and layout
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
+        #  Prepare plot area and layout
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
         
         # Reset values
         op <- par(no.readonly=TRUE)
@@ -3431,9 +3813,9 @@ setMethod("plotAlignDepth", "alignDepth",
         m <- matrix(c(1, 0, 2), ncol=1)
         layout(m, heights=c(5, lcm(0.2), 2))
         
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-        ## Do upper plot: align depth polygon
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
+        #  Do upper plot: align depth polygon
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
         par(mar=c(0, 4, 3, 1) + 0.1)
         
         plot(x, y, type="n", las=1, main=main, xlim=xlim, 
@@ -3450,9 +3832,9 @@ setMethod("plotAlignDepth", "alignDepth",
         # ylab has to be positioned more outside
         mtext(ylab, side=2, line=4 , adj=0.5)
         
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-        ## Do lower plot: Draw exon boxes, x-axis and transcript text
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
+        #  Do lower plot: Draw exon boxes, x-axis and transcript text
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
         par(mar=c(4, 4, 0, 1) + 0.1)
         plot(x, y, type="n", yaxt="n", xlim=xlim, ylim=c(0, 10), 
             cex.axis=1.5, bty="n", ylab="", xlab=xlab , 
@@ -3479,16 +3861,16 @@ setMethod("plotAlignDepth", "alignDepth",
         # Write transcript text
         text(xlim[1], 2, transcript, adj=0, cex=1.2)
         
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-        ## Cleanup
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
+        #  Cleanup
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
         par(op)
         
     }else{
         
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-        ## Alternative plot when no exon positions are given
-        ## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
+        #  Alternative plot when no exon positions are given
+        #  + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + # 
         plot(x, y, type="l", las=1, col=col, bty="n" , log=log,
                     xlab=xlab, ylab=ylab, main=main, ...)
         # log="" turns log scaling off.
@@ -3502,27 +3884,27 @@ setMethod("plotAlignDepth", "alignDepth",
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Count nucleotides
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Count nucleotides
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 setMethod("countNucs", "bamRange", function(object)
                 { return(.Call("bam_range_count_nucs",
                             object@range, PACKAGE="rbamtools"))})
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##                                                                           ##
-## bamAlign                                                                  ##
-##                                                                           ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#
+#  bamAlign
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## bamAlign encapsulates all contained data in a single dataset in           ##
-## a BAM-file.                                                               ##
-## bamAlign objects can be read from a bamReader instance and written to a   ##
-## bamWriter instance. All contained data can be read and written via        ##
-## accessors functions.                                                      ##
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  bamAlign encapsulates all contained data in a single dataset in
+#  a BAM-file.
+#  bamAlign objects can be read from a bamReader instance and written to a
+#  bamWriter instance. All contained data can be read and written via
+#  accessors functions.
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 setMethod(f="initialize", signature="bamAlign",
@@ -3636,9 +4018,9 @@ bamAlign <- function(qname, qseq, qqual, cigar, refid, position,
 }
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## bamAlign Member Reader functions
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  bamAlign Member Reader functions
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod(f="name", signature="bamAlign", definition=function(object)
 {
@@ -3701,226 +4083,185 @@ setMethod(f="alignQualVal", signature="bamAlign", definition=function(object)
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Queries against alignment flag (Readers and Accessors)
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## pcrORopt_duplicate
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  1.4  The alignment section: mandatory fields
+#       2. FLAG: bitwise FLAG
+#  Queries against alignment flag (Readers and Accessors)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-setMethod("pcrORopt_duplicate", "bamAlign", function(object)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x1 template having multiple segments in sequencing
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("paired", "bamAlign", function(object)
 {
-    return(.Call("bam_align_is_pcr_or_optical_dup",
-                                object@align, PACKAGE="rbamtools"))
+    .Call("bam_align_is_paired", object@align, PACKAGE="rbamtools")
 })
 
-
-setReplaceMethod(f="pcrORopt_duplicate", signature="bamAlign",
-    definition=function(object, value)
+setReplaceMethod(f="paired",
+    signature="bamAlign", definition=function(object, value)
 {
     if(!is.logical(value))
-        stop("class bamReader, Duplicate setter: value must be boolean")
-            .Call("bam_align_set_is_pcr_or_optical_dup",
-                                object@align, value, PACKAGE="rbamtools")
-                   return(object)
-})
-
-
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## failedQC
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-
-setMethod("failedQC", "bamAlign", function(object)
-{
-  return(.Call("bam_align_fail_qc", object@align, PACKAGE="rbamtools"))
-})
-
-setReplaceMethod(f="failedQC",  signature="bamAlign", 
-    definition=function(object, value)
-{
-    if(!is.logical(value))
-        stop("class bamReader, failedQC setter: value must be boolean")
-    .Call("bam_align_set_fail_qc", object@align, value, PACKAGE="rbamtools")
+        stop("value must be boolean")
+    
+    .Call("bam_align_set_is_paired", 
+                    object@align, value, PACKAGE="rbamtools")
     return(object)
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## firstInPair
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-setMethod("firstInPair",  "bamAlign",  function(object)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x2 each segment properly aligned according to the aligner
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("properPair", "bamAlign", function(object)
 {
-  .Call("bam_align_is_first_in_pair", object@align, PACKAGE="rbamtools")
+    .Call("bam_align_mapped_in_proper_pair", object@align, PACKAGE="rbamtools")
 })
 
-setReplaceMethod(f="firstInPair",  signature="bamAlign", 
-                                        definition=function(object, value)
+setReplaceMethod(f="properPair",
+    signature="bamAlign", definition=function(object, value)
+{
+    if(!is.logical(value))
+        stop("value must be boolean")
+    
+    .Call("bam_align_set_mapped_in_proper_pair",
+                    object@align, value, PACKAGE="rbamtools")
+    
+    return(object)
+})
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x4 segment unmapped
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("unmapped", "bamAlign", function(object)
+{
+    .Call("bam_align_is_unmapped", object@align, PACKAGE="rbamtools")
+})
+
+setReplaceMethod(f="unmapped",
+    signature="bamAlign", definition=function(object, value)
+{
+    if(!is.logical(value))
+        stop("value must be boolean")
+    
+    .Call("bam_align_set_is_unmapped",
+                    object@align, value, PACKAGE="rbamtools")
+    return(object)
+})
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x8 next segment in the template unmapped
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("mateUnmapped", "bamAlign", function(object)
+{
+    .Call("bam_align_mate_is_unmapped", object@align, PACKAGE="rbamtools")
+})
+
+setReplaceMethod(f="mateUnmapped",
+    signature="bamAlign", definition=function(object, value)
+{
+    if(!is.logical(value))
+        stop("value must be boolean")
+    
+    .Call("bam_align_set_mate_is_unmapped",
+        object@align, value, PACKAGE="rbamtools")
+    return(object)
+})
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x10 SEQ being reverse complemented
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("reverseStrand", "bamAlign", function(object)
+{
+    .Call("bam_align_strand_reverse", object@align, PACKAGE="rbamtools")
+})
+
+setReplaceMethod(f="reverseStrand",
+    signature="bamAlign", definition=function(object, value)
+{
+    if(!is.logical(value))
+        stop("value must be boolean")
+    
+    .Call("bam_align_set_strand_reverse", 
+        object@align, value, PACKAGE="rbamtools")
+    return(object)
+})
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x20 SEQ of the next segment in the template being reversed
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("mateReverseStrand", "bamAlign", function(object)
+{
+    .Call("bam_align_mate_strand_reverse", object@align, PACKAGE="rbamtools")
+})
+
+setReplaceMethod(f="mateReverseStrand",
+    signature="bamAlign", definition=function(object, value)
+{
+    if(!is.logical(value))
+        stop("value must be boolean")
+    
+    .Call("bam_align_set_mate_strand_reverse",
+        object@align, value, PACKAGE="rbamtools")
+    return(object)
+})
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x40 the first segment in the template
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("firstInPair",  "bamAlign",  function(object)
+{
+    .Call("bam_align_is_first_in_pair", object@align, PACKAGE="rbamtools")
+})
+
+setReplaceMethod(f="firstInPair", 
+    signature="bamAlign", definition=function(object, value)
 {
     if(!is.logical(value))
         stop("class bamReader, FirstInPair setter: value must be boolean")
-    
+     
     .Call("bam_align_set_is_first_in_pair", 
-                                    object@align, value, PACKAGE="rbamtools")
+            object@align, value, PACKAGE="rbamtools")
     return(object)
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## secondInPair
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x80 the last segment in the template
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 setMethod("secondInPair", "bamAlign", function(object)
 {
     .Call("bam_align_is_second_in_pair", object@align, PACKAGE="rbamtools")
 })
 
-
-setReplaceMethod(f="secondInPair", signature="bamAlign",
-                                    definition=function(object, value)
+setReplaceMethod(f="secondInPair",
+    signature="bamAlign", definition=function(object, value)
 {
     if(!is.logical(value))
         stop("value must be boolean")
     
     .Call("bam_align_set_is_second_in_pair", 
-                                object@align, value, PACKAGE="rbamtools")
-    
-    return(object)
-})
-
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## unmapped
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-
-setMethod("unmapped", "bamAlign", function(object)
-{
-  .Call("bam_align_is_unmapped", object@align, PACKAGE="rbamtools")
-})
-
-setReplaceMethod(f="unmapped", signature="bamAlign",
-                                        definition=function(object, value)
-{
-    if(!is.logical(value))
-        stop("value must be boolean")
-    
-    .Call("bam_align_set_is_unmapped", object@align, value, PACKAGE="rbamtools")
+        object@align, value, PACKAGE="rbamtools")
+                     
     return(object)
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## mateUnmapped
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-
-setMethod("mateUnmapped", "bamAlign", function(object)
-{
-  .Call("bam_align_mate_is_unmapped", object@align, PACKAGE="rbamtools")
-})
-
-setReplaceMethod(f="mateUnmapped", signature="bamAlign",
-                        definition=function(object, value)
-{
-    if(!is.logical(value))
-        stop("value must be boolean")
-    
-    .Call("bam_align_set_mate_is_unmapped", object@align, 
-                                                value, PACKAGE="rbamtools")
-    return(object)
-})
-
-
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## reverseStrand
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-
-setMethod("reverseStrand", "bamAlign", function(object)
-{
-  .Call("bam_align_strand_reverse", object@align, PACKAGE="rbamtools")
-})
-
-
-setReplaceMethod(f="reverseStrand", signature="bamAlign",
-                                    definition=function(object,value)
-{
-    if(!is.logical(value))
-        stop("class bamReader, reverseStrand setter: value must be boolean")
-    
-    .Call("bam_align_set_strand_reverse", 
-                                    object@align, value, PACKAGE="rbamtools")
-    return(object)
-})
-
-
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## mateReverseStrand
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-
-setMethod("mateReverseStrand", "bamAlign", function(object)
-{
-  .Call("bam_align_mate_strand_reverse", object@align, PACKAGE="rbamtools")
-})
-
-
-setReplaceMethod(f="mateReverseStrand", signature="bamAlign",
-                                        definition=function(object, value)
-{
-    if(!is.logical(value))
-        stop("value must be boolean")
-    
-    .Call("bam_align_set_mate_strand_reverse", object@align, 
-                                                value, PACKAGE="rbamtools")
-    return(object)
-})
-
-
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## paired
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-setMethod("paired", "bamAlign", function(object)
-{
-    .Call("bam_align_is_paired",object@align,PACKAGE="rbamtools")
-})
-
-setReplaceMethod(f="paired", signature="bamAlign",
-                            definition=function(object,value)
-{
-    if(!is.logical(value))
-        stop("value must be boolean")
-    
-    .Call("bam_align_set_is_paired",object@align,value,PACKAGE="rbamtools")
-    return(object)
-})
-
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## properPair
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-
-setMethod("properPair", "bamAlign", function(object)
-{
-    .Call("bam_align_mapped_in_proper_pair", object@align, PACKAGE="rbamtools")
-})
-
-setReplaceMethod(f="properPair", signature="bamAlign", 
-                                        definition=function(object, value)
-{
-    if(!is.logical(value))
-        stop("value must be boolean")
-    
-    .Call("bam_align_set_mapped_in_proper_pair",
-                                    object@align, value, PACKAGE="rbamtools")
-    
-    return(object)
-})
-
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## secondaryAlign
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x100 secondary alignment
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 setMethod("secondaryAlign", "bamAlign", function(object)
 {
   .Call("bam_align_is_secondary_align",object@align, PACKAGE="rbamtools")
 })
-
 
 setReplaceMethod(f="secondaryAlign", signature="bamAlign",
                                         definition=function(object, value)
@@ -3929,49 +4270,113 @@ setReplaceMethod(f="secondaryAlign", signature="bamAlign",
         stop("value must be boolean")
     
     .Call("bam_align_set_is_secondary_align", 
-                                    object@align, value, PACKAGE="rbamtools")
+                    object@align, value, PACKAGE="rbamtools")
     return(object)
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## flag
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x200 not passing quality controls
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("failedQC", "bamAlign", function(object)
+{
+    return(.Call("bam_align_fail_qc", object@align, PACKAGE="rbamtools"))
+})
+
+setReplaceMethod(f="failedQC", 
+        signature="bamAlign", definition=function(object, value)
+{
+    if(!is.logical(value))
+        stop("class bamReader, failedQC setter: value must be boolean")
+    
+    .Call("bam_align_set_fail_qc", object@align, value, PACKAGE="rbamtools")
+    return(object)
+})
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x400 PCR or optical duplicate
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("pcrORopt_duplicate", "bamAlign", function(object)
+{
+    return(.Call("bam_align_is_pcr_or_optical_dup",
+                object@align, PACKAGE="rbamtools"))
+})
+
+setReplaceMethod(f="pcrORopt_duplicate",
+        signature="bamAlign", definition=function(object, value)
+{
+    if(!is.logical(value))
+        stop("class bamReader, Duplicate setter: value must be boolean")
+    .Call("bam_align_set_is_pcr_or_optical_dup", 
+                            object@align, value, PACKAGE="rbamtools")
+    return(object)
+})
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  0x800 supplementary alignment
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+setMethod("suppAlign", "bamAlign", function(object)
+{
+    .Call("bam_align_is_supplementary_align",object@align, PACKAGE="rbamtools")
+})
+
+setReplaceMethod(f="suppAlign",
+        signature="bamAlign", definition=function(object, value)
+{
+    if(!is.logical(value))
+        stop("value must be boolean")
+    
+    .Call("bam_align_set_is_supplementary_align", 
+        object@align, value, PACKAGE="rbamtools")
+    return(object)
+})
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  flag
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 setMethod("flag", "bamAlign", function(object)
 {
   .Call("bam_align_get_flag", object@align, PACKAGE="rbamtools")
 })
 
-
 setReplaceMethod(f="flag", signature="bamAlign",
-                                    definition=function(object,value)
+                                    definition=function(object, value)
 {
+    if(!is.numeric(value))
+        stop("value must be numeric")
+    
     if(!is.integer(value))
-        stop("value must be boolean")
+    {
+        value <- as.integer(value)
+        message("[flag] Value is coerced to integer.")
+    }
     
     .Call("bam_align_set_flag", object@align, value, PACKAGE="rbamtools")
     return(object)
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End: Queries against alignment flag (Readers and Accessors)
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End: Queries against alignment flag (Readers and Accessors)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 setMethod("countNucs","bamAlign",function(object)
 {
     return(.Call("bam_align_count_nucs", object@align, PACKAGE="rbamtools"))
 })
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  End: bamAlign
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   End: bamAlign
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  coercing
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   coercing
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 as.data.frame.bamRange <- function(x, row.names=NULL, optional=FALSE, ...)
 {
@@ -4029,16 +4434,17 @@ setAs("refSeqDict", "data.frame", function(from)
                     SP=from@SP, UR=from@UR, row.names=1:length(from@SN)))
 })
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## End: coercing
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  End: coercing
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## Miscellaneous functions
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  Miscellaneous functions
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-create.idx.batch <- function(bam, idx=paste(bam, ".bai", sep=""), rebuild=FALSE)
+
+createIdxBatch <- function(bam, idx=paste(bam, ".bai", sep=""), rebuild=FALSE)
 {
     if(!is.character(bam))
         stop("'bam' must be character!")
@@ -4066,13 +4472,13 @@ create.idx.batch <- function(bam, idx=paste(bam, ".bai", sep=""), rebuild=FALSE)
         if(rebuild[1])
         {
         reader <- bamReader(bam[i])
-        create.index(reader, idx[i])
+        createIndex(reader, idx[i])
         bamClose(reader)       
         }else{
             if(!file.exists(idx[i]))
             {
                 reader <- bamReader(bam[i])
-                create.index(reader, idx[i])
+                createIndex(reader, idx[i])
                 bamClose(reader)     
             }
         }
@@ -4080,6 +4486,10 @@ create.idx.batch <- function(bam, idx=paste(bam, ".bai", sep=""), rebuild=FALSE)
     }
     return(invisible())
 }
+
+create.idx.batch <- function(bam, idx=paste(bam, ".bai", sep=""), rebuild=FALSE)
+{ .Deprecated("createIdxBatch",package="rbamtools") }
+
 
 
 countTextLines <- function(filenames)
@@ -4105,9 +4515,9 @@ countTextLines <- function(filenames)
     return(res)
 }
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-##  Unexported and undocumented routines
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#   Unexported and undocumented routines
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 readSepGapTables <- function(bam, profo, defo="sep_gap",
                                             idx=paste(bam, ".bai", sep=""))
@@ -4130,9 +4540,9 @@ readSepGapTables <- function(bam, profo, defo="sep_gap",
         reader <- bamReader(bam[i])
         
         if(!file.exists(idx[i]))
-            create.index(reader, idx[i])
+            createIndex(reader, idx[i])
         
-        load.index(reader, idx[i])
+        loadIndex(reader, idx[i])
         
         if(i==1)
         {
@@ -4196,8 +4606,8 @@ readAccGapTables <- function(bam, profo, defo="sep_gap",
         
         reader <- bamReader(bam[i])
         if(!file.exists(idx[i]))
-            create.index(reader, idx[i])
-        load.index(reader, idx[i])
+            createIndex(reader, idx[i])
+        loadIndex(reader, idx[i])
         
         if(i==1) # first bam file
         {
@@ -4297,6 +4707,67 @@ copy_fastq <- function(infile, outfile, which, append=FALSE)
     return(invisible(ans))
 }
 
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
-## End of File (rbamtools.r)
-## + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + ##
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+# Function declaration for extraction of regions into separate BAM files:
+#
+# Extracts alignments from given (genetic) ranges and BAM files
+# into a set of output BAM files.
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+extractBamRegions <- function(bamFiles, ranges,
+                idxFiles=paste(bamFiles, "bai", sep="."),
+                outFiles=paste("bam", 1:length(bamFiles),".bam", sep=""))
+{
+    if(!is.character(bamFiles))
+        stop("'bamFiles' must be character!")
+    
+    if(!is.character(idxFiles))
+        stop("'idxFiles' must be character!")
+    
+    if(!is.character(outFiles))
+        stop("'outFiles' must be character!")
+    
+    if(!all(file.exists(bamFiles)))
+        stop("bam file(s) not found!")
+    
+    if(!all(file.exists(idxFiles)))
+        stop("idx file(s) not found!")
+    
+    if(length(bamFiles) != length(idxFiles))
+        stop("bamFiles and idxFiles must have equal length!")
+    
+    if(length(bamFiles) != length(outFiles))
+        stop("bamFiles and outFiles must have equal length!")
+    
+    if(!all(ranges$end > ranges$start))
+        stop("All 'end' positions must be greater than 'start'!")
+    
+    
+    nr <- nrow(ranges)
+    nf <- length(bamFiles)
+    
+    for(i in 1:nf)
+    {
+        reader <- bamReader(bamFiles[i], idx=TRUE)
+        cat("[i] ", format(i, width=2), "\n")
+        header <- getHeader(reader)
+        writer <- bamWriter(header, outFiles[i])
+        
+        for(j in 1:nr)
+        {
+            sn <- getRefCoords(reader,as.character(ranges$seqid[j]))
+            coords <- c(sn[1], ranges$start[j], ranges$end[j])
+            brg <- bamRange(reader, coords)
+            bamSave(writer, brg, refid=sn[1])        
+        }
+        bamClose(reader)
+        bamClose(writer)
+    }
+    return(invisible())
+}
+
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#  End of File (rbamtools.r)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #

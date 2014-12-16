@@ -36,6 +36,7 @@
 #include "samtools/bam.h"
 #include "samtools/sam.h"
 #include "align_list.h"
+#include "align_counts.h"
 #include "gap_list.h"
 
 // Extended gap_list
@@ -200,17 +201,18 @@ SEXP bam_align_count_nucs(SEXP pAlign);
 // alignment flags
 
 // Reading accessors
-SEXP bam_align_is_paired(SEXP pAlign);//
-SEXP bam_align_mapped_in_proper_pair(SEXP pAlign);//
-SEXP bam_align_is_unmapped(SEXP pAlign);//
-SEXP bam_align_mate_is_unmapped(SEXP pAlign);//
-SEXP bam_align_strand_reverse(SEXP pAlign);//
-SEXP bam_align_mate_strand_reverse(SEXP pAlign);//
-SEXP bam_align_is_first_in_pair(SEXP pAlign);//
-SEXP bam_align_is_second_in_pair(SEXP pAlign);//
+SEXP bam_align_is_paired(SEXP pAlign);
+SEXP bam_align_mapped_in_proper_pair(SEXP pAlign);
+SEXP bam_align_is_unmapped(SEXP pAlign);
+SEXP bam_align_mate_is_unmapped(SEXP pAlign);
+SEXP bam_align_strand_reverse(SEXP pAlign);
+SEXP bam_align_mate_strand_reverse(SEXP pAlign);
+SEXP bam_align_is_first_in_pair(SEXP pAlign);
+SEXP bam_align_is_second_in_pair(SEXP pAlign);
 SEXP bam_align_is_secondary_align(SEXP pAlign);
-SEXP bam_align_fail_qc(SEXP pAlign);//
-SEXP bam_align_is_pcr_or_optical_dup(SEXP pAlign);//
+SEXP bam_align_fail_qc(SEXP pAlign);
+SEXP bam_align_is_pcr_or_optical_dup(SEXP pAlign);
+SEXP bam_align_is_supplementary_align(SEXP pAlign);
 SEXP bam_align_get_flag(SEXP pAlign);
 
 // Writing accessors
@@ -226,10 +228,17 @@ SEXP bam_align_set_is_second_in_pair(SEXP pAlign, SEXP val);
 SEXP bam_align_set_is_secondary_align(SEXP pAlign, SEXP val);
 SEXP bam_align_set_fail_qc(SEXP pAlign, SEXP val);
 SEXP bam_align_set_is_pcr_or_optical_dup(SEXP pAlign, SEXP val);
+SEXP bam_align_set_is_supplementary_align(SEXP pAlign, SEXP val);
 SEXP bam_align_set_flag(SEXP pAlign, SEXP val);
 
 // Create new bamAlign structure from scratch
 SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals);
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// bam_count_segment
+///////////////////////////////////////////////////////////////////////////////////////////////////
+SEXP bam_count_segment_aligns(SEXP pReader,SEXP pIndex,SEXP pCoords,SEXP pSeg, SEXP pComplex);
+SEXP bam_count_segment_melt_down(SEXP pSeg, SEXP pFactor);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Miscellaneous functions
@@ -238,6 +247,7 @@ SEXP copy_fastq_records(SEXP pInfile,SEXP pOutfile,SEXP pWhichCopy,SEXP pAppend)
 SEXP count_fastq(SEXP pInfile,SEXP pMaxCol);
 SEXP get_col_quantiles(SEXP pQuant, SEXP pDf);
 SEXP count_text_lines(SEXP pInfile);
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Declarations for R_registerRoutines

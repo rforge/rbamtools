@@ -91,22 +91,22 @@ static const unsigned char FASTQ_LETTERS[256] = {
 
 
 
-static R_INLINE void clear_buf(char *c,unsigned n)
+static R_INLINE void clear_buf(char *c, unsigned n)
 {
 	unsigned i;
-	for(i=0;i<n;++i)
+	for(i=0; i<n; ++i)
 		c[i]=(char)0;
 }
 
-static R_INLINE void set_flag(bam1_t *align,_Bool val,unsigned pattern)
+static R_INLINE void set_flag(bam1_t *align, _Bool val, unsigned pattern)
 {
 	if(val)
-		align->core.flag=(align->core.flag) | pattern;
+		align->core.flag |= pattern;
 	else
-		align->core.flag=(align->core.flag) & !pattern;
+		align->core.flag &= ~pattern;
 }
 
-static R_INLINE int cigar2str(char *c,const bam1_t *align)
+static R_INLINE int cigar2str(char *c, const bam1_t *align)
 {
 	if(align==NULL)
 		return 0;
@@ -115,7 +115,7 @@ static R_INLINE int cigar2str(char *c,const bam1_t *align)
 	uint32_t *cigar=bam1_cigar(align);
 	char buf[128];
 
-	sprintf(buf,"%lu",(unsigned long) (cigar[0] >> BAM_CIGAR_SHIFT));
+	sprintf(buf, "%lu", (unsigned long) (cigar[0] >> BAM_CIGAR_SHIFT));
 	strcpy(c,buf);
 	if((cigar[0]&BAM_CIGAR_MASK)>=strlen(CIGAR_TYPES))	// Error
 		return 0;
@@ -193,9 +193,10 @@ static void finalize_bam_reader(SEXP ptr)
 {
 	if(TYPEOF(ptr)!=EXTPTRSXP)
 		error("[finalize_bam_reader] No external pointer!");
+	if(!R_ExternalPtrAddr(ptr)) return;
 	samfile_t *reader=(samfile_t*)(R_ExternalPtrAddr(ptr));
 	samclose(reader);	// checks for 0
-	R_SetExternalPtrAddr(ptr,NULL);
+	R_ClearExternalPtr(ptr);
 }
 
 SEXP bam_reader_open(SEXP filename)
@@ -210,7 +211,7 @@ SEXP bam_reader_open(SEXP filename)
 
 	SEXP pReader;
 	PROTECT(pReader=R_MakeExternalPtr( (void*)(reader),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(pReader,finalize_bam_reader);
+	R_RegisterCFinalizerEx(pReader, finalize_bam_reader, TRUE);
 	UNPROTECT(1);
 	return pReader;
 }
@@ -222,7 +223,7 @@ SEXP bam_reader_close(SEXP pReader)
 
 	samfile_t *reader=(samfile_t*) (R_ExternalPtrAddr(pReader));
 	samclose(reader);
-	R_SetExternalPtrAddr(pReader,NULL);
+	R_ClearExternalPtr(pReader);
 	return R_NilValue;
 }
 
@@ -340,18 +341,18 @@ SEXP bam_reader_get_ref_data(SEXP pReader)
 	return dflist;
 }
 
-SEXP bam_reader_create_index(SEXP pBamFile,SEXP pIdxFile)
+SEXP bam_reader_create_index(SEXP pBamFile, SEXP pIdxFile)
 {
 	if(TYPEOF(pBamFile)!=STRSXP)
 		error("[bam_reader_create_index] BamFile must be a string!\n");
 	if(TYPEOF(pIdxFile)!=STRSXP)
 		error("[bam_reader_create_index] IndexFile must be a string!\n");
 
-	const char *bamFile=CHAR(STRING_ELT(pBamFile,0));
-	const char *idxFile=CHAR(STRING_ELT(pIdxFile,0));
+	const char *bamFile = CHAR(STRING_ELT(pBamFile, 0));
+	const char *idxFile = CHAR(STRING_ELT(pIdxFile, 0));
 	SEXP ans;
-	PROTECT(ans=Rf_allocVector(INTSXP,1));
-	INTEGER(ans)[0]=bam_index_build2(bamFile,idxFile);
+	PROTECT(ans = Rf_allocVector(INTSXP, 1));
+	INTEGER(ans)[0] = bam_index_build2(bamFile, idxFile);
 	UNPROTECT(1);
 	return ans;
 }
@@ -361,9 +362,10 @@ static void finalize_bam_index(SEXP ptr)
 	if(TYPEOF(ptr)!=EXTPTRSXP)
 		error("[finalize_bam_index] No external pointer!");
 
-	bam_index_t *index=(bam_index_t *)(R_ExternalPtrAddr(ptr));
+	if(!R_ExternalPtrAddr(ptr)) return;
+	bam_index_t *index = (bam_index_t *)(R_ExternalPtrAddr(ptr));
 	bam_index_destroy(index);	// checks for zero
-	R_SetExternalPtrAddr(ptr,NULL);
+	R_ClearExternalPtr(ptr);
 }
 
 SEXP bam_reader_load_index(SEXP pIdxFile)
@@ -371,14 +373,14 @@ SEXP bam_reader_load_index(SEXP pIdxFile)
 	if(TYPEOF(pIdxFile)!=STRSXP)
 		error("[bam_reader_load_index] pIdxFile must be a string!\n");
 
-	const char *idxFile=CHAR(STRING_ELT(pIdxFile,0));
-	FILE *f=fopen(idxFile,"rb");
+	const char *idxFile = CHAR(STRING_ELT(pIdxFile, 0));
+	FILE *f = fopen(idxFile, "rb");
 	bam_index_t *index = bam_index_load_core(f);
 	fclose(f);
 
 	SEXP idx;
-	PROTECT(idx=R_MakeExternalPtr( (void*)(index),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(idx,finalize_bam_index);
+	PROTECT(idx = R_MakeExternalPtr( (void*)(index), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(idx, finalize_bam_index, TRUE);
 	UNPROTECT(1);
 	return idx;
 }
@@ -390,7 +392,7 @@ SEXP bam_reader_unload_index(SEXP pIdx)
 
 	bam_index_t *idx=(bam_index_t *)(R_ExternalPtrAddr(pIdx));
 	bam_index_destroy(idx);
-	R_SetExternalPtrAddr(pIdx,NULL);
+	R_ClearExternalPtr(pIdx);
 	return R_NilValue;
 }
 
@@ -413,7 +415,7 @@ SEXP bam_reader_get_next_align(SEXP pReader)
 
 	SEXP ptr;
 	PROTECT(ptr=R_MakeExternalPtr((void*)(align),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(ptr,finalize_bam_align);
+	R_RegisterCFinalizerEx(ptr, finalize_bam_align, TRUE);
 	UNPROTECT(1);
 	return ptr;
 }
@@ -437,7 +439,7 @@ SEXP bam_reader_save_aligns(SEXP pReader,SEXP pWriter)
 
 
 	bam1_t *align=bam_init1();
-	unsigned long nAligns=0;
+	sle_type nAligns=0;
 	int res=samread(reader,align);
 	while(res>0)
 	{
@@ -454,8 +456,8 @@ SEXP bam_reader_save_aligns(SEXP pReader,SEXP pWriter)
 
 
 	SEXP ans;
-	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=nAligns;
+	PROTECT(ans=allocVector(REALSXP,1));
+	REAL(ans)[0]= (double) nAligns;
 	UNPROTECT(1);
 	return ans;
 }
@@ -495,7 +497,7 @@ SEXP bam_reader_get_header(SEXP pReader)
 	samfile_t *reader=(samfile_t*)(R_ExternalPtrAddr(pReader));
 	SEXP ptr;
 	PROTECT(ptr=R_MakeExternalPtr((void*)clone_bam_header(reader->header),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(ptr,finalize_bam_header);
+	R_RegisterCFinalizerEx(ptr, finalize_bam_header, TRUE);
 	UNPROTECT(1);
 	return ptr;
 }
@@ -547,7 +549,7 @@ SEXP bam_reader_write_fastq(SEXP pReader,SEXP pFilename,SEXP pAppend)
 	unsigned char *raw_seq;
 	int32_t seq_len;
 	int buf_size=2048, nuc_val;
-	char *buf=R_alloc(buf_size,sizeof(char));
+	char *buf = R_alloc(buf_size, sizeof(char));
 	uint8_t *quals;
 	unsigned i=0,j;
 
@@ -559,16 +561,16 @@ SEXP bam_reader_write_fastq(SEXP pReader,SEXP pFilename,SEXP pAppend)
 	while(res>=0)
 	{
 		// Read Sequence
-		seq_len=align->core.l_qseq;
-		if(seq_len>buf_size)
+		seq_len = align->core.l_qseq;
+		if(seq_len > buf_size)
 		{
-			buf_size=2*seq_len;
-			buf=R_alloc(buf_size,sizeof(char));
+			buf_size = 2 * seq_len;
+			buf = R_alloc(buf_size, sizeof(char));
 		}
 		raw_seq=bam1_seq(align);
 		for(j=0;j<seq_len;++j)
 		{
-			nuc_val=bam1_seqi(raw_seq,j);
+			nuc_val = bam1_seqi(raw_seq, j);
 			if(nuc_val<0 || nuc_val>15)
 			{
 				Rprintf("[bam_reader_write_fastq] bam_seq out of range at align %u\n",i+1);
@@ -644,9 +646,9 @@ SEXP bam_reader_write_fastq_index(SEXP pReader,SEXP pFilename,SEXP pWhichCopy,SE
 	unsigned char *raw_seq;
 	int32_t seq_len;
 	int buf_size=2048,nuc_val;
-	char *buf=R_alloc(buf_size,sizeof(char));
+	char *buf = R_alloc(buf_size, sizeof(char));
 	uint8_t *quals;
-	unsigned nWritten=0,j,nChecked=0;
+	unsigned nWritten=0, j, nChecked=0;
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 */
@@ -664,14 +666,14 @@ SEXP bam_reader_write_fastq_index(SEXP pReader,SEXP pFilename,SEXP pWhichCopy,SE
 			seq_len=align->core.l_qseq;
 			if(seq_len>buf_size)
 			{
-				buf_size=2*seq_len;
-				buf= R_alloc(buf_size,sizeof(char));
+				buf_size = 2 * seq_len;
+				buf = R_alloc(buf_size, sizeof(char));
 			}
 			raw_seq=bam1_seq(align);
-			for(j=0;j<seq_len;++j)
+			for(j=0; j<seq_len; ++j)
 			{
 				nuc_val=bam1_seqi(raw_seq,j);
-				if(nuc_val<0 || nuc_val>15)
+				if( (nuc_val < 0) || (nuc_val > 15) )
 				{
 					Rprintf("[bam_reader_write_fastq_index] bam_seq out of range at align %u\n",nChecked);
 					nuc_val=15;
@@ -724,10 +726,10 @@ static void finalize_gap_list(SEXP ptr)
 {
 	if(TYPEOF(ptr)!=EXTPTRSXP)
 		error("[finalize_gap_list] No external pointer!\n");
+	if(!R_ExternalPtrAddr(ptr)) return;
 	gap_list *l=(gap_list*)(R_ExternalPtrAddr(ptr));
 	destroy_gap_list(l);
-	l=NULL;
-	R_SetExternalPtrAddr(ptr,NULL);
+	R_ClearExternalPtr(ptr);
 }
 
 SEXP create_gap_list()
@@ -735,7 +737,7 @@ SEXP create_gap_list()
 	gap_list *l=init_gap_list();
 	SEXP list;
 	PROTECT(list=R_MakeExternalPtr((void*)(l),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finalize_gap_list);
+	R_RegisterCFinalizerEx(list,finalize_gap_list, TRUE);
 	UNPROTECT(1);
 	return list;
 }
@@ -780,8 +782,8 @@ SEXP gap_list_fetch(SEXP pReader,SEXP pIndex,SEXP pCoords)
 	gap_list *l=init_gap_list();
     bam_fetch(reader->x.bam, index, refid, begin, end, (void*)l, gap_fetch_func);
     SEXP list;
-	PROTECT(list=R_MakeExternalPtr( (void*)(l),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finalize_gap_list);
+	PROTECT(list = R_MakeExternalPtr( (void*)(l), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(list, finalize_gap_list, TRUE);
 	UNPROTECT(1);
 	return list;
 }
@@ -794,64 +796,53 @@ SEXP gap_list_get_df(SEXP pGapList)
 	gap_list *l=(gap_list*)(R_ExternalPtrAddr(pGapList));
 
 	/* create data.frame 									*/
-	int nProtected=0;
-	int nCols=9;
+	int nCols = 9;
 	SEXP dflist;
 	PROTECT(dflist=allocVector(VECSXP,nCols));
-	++nProtected;
-	int nRows=(l->size);
+	R_xlen_t nRows= (R_xlen_t) (l->size);
 	int i;
 	unsigned *pos_data;
 
 	/* Column 0: refid 										*/
 	SEXP ref_vector;
 	PROTECT(ref_vector=allocVector(INTSXP,nRows));
-	++nProtected;
 
 	/* Column 1: position 									*/
 	SEXP pos_vector;
 	PROTECT(pos_vector=allocVector(INTSXP,nRows));
-	++nProtected;
 
 	/* Column 2: left_cigar_len								*/
 	SEXP left_cigar_len_vector;
 	PROTECT(left_cigar_len_vector=allocVector(INTSXP,nRows));
-	++nProtected;
 
 	/* Column 3: left_cigar_type							*/
 	SEXP left_cigar_type_vector;
 	PROTECT(left_cigar_type_vector=allocVector(INTSXP,nRows));
-	++nProtected;
 
 	/* Column 4: left_stop									*/
 	SEXP left_stop_vector;
 	PROTECT(left_stop_vector=allocVector(INTSXP,nRows));
-	++nProtected;
 
 	/* Column 5: gap_len									*/
 	SEXP gap_len_vector;
 	PROTECT(gap_len_vector=allocVector(INTSXP,nRows));
-	++nProtected;
 
 	/* Column 6: right_start								*/
 	SEXP right_start_vector;
 	PROTECT(right_start_vector=allocVector(INTSXP,nRows));
-	++nProtected;
 
 	/* Column 7: right_cigar_len							*/
 	SEXP right_cigar_len_vector;
 	PROTECT(right_cigar_len_vector=allocVector(INTSXP,nRows));
-	++nProtected;
 
 	/* Column 8: right_cigar_type							*/
 	SEXP right_cigar_type_vector;
 	PROTECT(right_cigar_type_vector=allocVector(INTSXP,nRows));
-	++nProtected;
 
 	/* start position										*/
 	l->curr_el=l->first_el;
 
-	for(i=0;i<nRows;++i)
+	for(i=0; i<nRows; ++i)
 	{
 		pos_data=l->curr_el->pos_data;
 		INTEGER(ref_vector)        		[i]=pos_data[0];
@@ -873,7 +864,6 @@ SEXP gap_list_get_df(SEXP pGapList)
 	SEXP levs;
 	int nLevels=9;
 	PROTECT(levs=allocVector(STRSXP,nLevels));
-	++nProtected;
 
 	SET_STRING_ELT(levs,0,mkChar("M"));
 	SET_STRING_ELT(levs,1,mkChar("I"));
@@ -887,9 +877,8 @@ SEXP gap_list_get_df(SEXP pGapList)
 	setAttrib(left_cigar_type_vector,R_LevelsSymbol,levs);
 
 	SEXP csymb;
-	PROTECT(csymb=mkString("factor"));
-	++nProtected;
-	setAttrib(left_cigar_type_vector,R_ClassSymbol,csymb);
+	PROTECT(csymb = mkString("factor"));
+	setAttrib(left_cigar_type_vector, R_ClassSymbol, csymb);
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Convert right_cigar_type_vector to vector
@@ -897,8 +886,6 @@ SEXP gap_list_get_df(SEXP pGapList)
 
 	nLevels=9;
 	PROTECT(levs=allocVector(STRSXP,nLevels));
-	++nProtected;
-
 	SET_STRING_ELT(levs,0,mkChar("M"));
 	SET_STRING_ELT(levs,1,mkChar("I"));
 	SET_STRING_ELT(levs,2,mkChar("D"));
@@ -911,7 +898,6 @@ SEXP gap_list_get_df(SEXP pGapList)
 	setAttrib(right_cigar_type_vector,R_LevelsSymbol,levs);
 
 	PROTECT(csymb=mkString("factor"));
-	++nProtected;
 	setAttrib(right_cigar_type_vector,R_ClassSymbol,csymb);
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -930,7 +916,6 @@ SEXP gap_list_get_df(SEXP pGapList)
 	 */
 	SEXP col_names;
 	PROTECT(col_names=allocVector(STRSXP,nCols));
-	++nProtected;
 
 	SET_STRING_ELT(col_names,0,mkChar("refid"));
 	SET_STRING_ELT(col_names,1,mkChar("position"));
@@ -948,56 +933,57 @@ SEXP gap_list_get_df(SEXP pGapList)
 	 */
 	SEXP row_names;
     PROTECT(row_names=allocVector(STRSXP,nRows));
-    ++nProtected;
 
-	int buf_size=128;
-	char *buf=(char*) calloc(buf_size,sizeof(char));
-    for(i=0;i<nRows;++i)
+	size_t buf_size = 128LU;
+	char *buf = (char*) calloc(buf_size, sizeof(char));
+    for(i=0; i<nRows; ++i)
     {
-    	sprintf(buf,"%i",i);
-    	SET_STRING_ELT(row_names,i,mkChar(buf));
+    	sprintf(buf, "%i", i);
+    	SET_STRING_ELT(row_names, i, mkChar(buf));
     }
     free(buf);
-    setAttrib(dflist,R_RowNamesSymbol,row_names);
-	setAttrib(dflist,R_ClassSymbol,mkString("data.frame"));
-	UNPROTECT(nProtected);
+    setAttrib(dflist, R_RowNamesSymbol, row_names);
+	setAttrib(dflist, R_ClassSymbol, mkString("data.frame"));
+
+	// df-list, 9 columns, 2x2 factor, col.names, row.names
+	UNPROTECT(16);
 	return dflist;
 }
 
 SEXP gap_list_get_size(SEXP pGapList)
 {
-	if(TYPEOF(pGapList)!=EXTPTRSXP)
+	if(TYPEOF(pGapList) != EXTPTRSXP)
 		error("[gap_list_get_size] No external pointer!");
 
-	gap_list *l=(gap_list*)(R_ExternalPtrAddr(pGapList));
+	gap_list *l = (gap_list*) (R_ExternalPtrAddr(pGapList));
 	SEXP ans;
-	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->size);
+	PROTECT(ans = allocVector(REALSXP, 1));
+	REAL(ans)[0] = (double)(l->size);
 	UNPROTECT(1);
 	return ans;
 }
 
 SEXP gap_list_get_nAligns(SEXP pGapList)
 {
-	if(TYPEOF(pGapList)!=EXTPTRSXP)
+	if(TYPEOF(pGapList) != EXTPTRSXP)
 		error("[gap_list_get_size] No external pointer!");
 
-	gap_list *l=(gap_list*)(R_ExternalPtrAddr(pGapList));
+	gap_list *l = (gap_list*) (R_ExternalPtrAddr(pGapList));
 	SEXP ans;
-	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->nAligns);
+	PROTECT(ans = allocVector(REALSXP,1));
+	REAL(ans)[0] = (double) (l->nAligns);
 	UNPROTECT(1);
 	return ans;
 }
 SEXP gap_list_get_nAlignGaps(SEXP pGapList)
 {
-	if(TYPEOF(pGapList)!=EXTPTRSXP)
+	if(TYPEOF(pGapList) != EXTPTRSXP)
 		error("[gap_list_get_size] No external pointer!");
 
-	gap_list *l=(gap_list*)(R_ExternalPtrAddr(pGapList));
+	gap_list *l = (gap_list*) (R_ExternalPtrAddr(pGapList));
 	SEXP ans;
-	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->nAlignGaps);
+	PROTECT(ans = allocVector(REALSXP,1));
+	REAL(ans)[0] = (double) (l->nAlignGaps);
 	UNPROTECT(1);
 	return ans;
 }
@@ -1011,10 +997,10 @@ static void finalize_gap_site_list(SEXP ptr)
 {
 	if(TYPEOF(ptr)!=EXTPTRSXP)
 		error("[finalize_gap_list] No external pointer!\n");
+	if(!R_ExternalPtrAddr(ptr)) return;
 	struct site_list *l=(site_list*)(R_ExternalPtrAddr(ptr));
 	site_list_destroy(l);
-	l=NULL;
-	R_SetExternalPtrAddr(ptr,NULL);
+    R_ClearExternalPtr(ptr);
 }
 
 SEXP create_gap_site_list()
@@ -1022,7 +1008,7 @@ SEXP create_gap_site_list()
 	site_list *l=site_list_init();
 	SEXP list;
 	PROTECT(list=R_MakeExternalPtr((void*)(l),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finalize_gap_site_list);
+	R_RegisterCFinalizerEx(list, finalize_gap_site_list, TRUE);
 	UNPROTECT(1);
 	return list;
 }
@@ -1057,20 +1043,21 @@ SEXP gap_site_list_fetch(SEXP pReader,SEXP pIndex,SEXP pCoords)
 	int begin=(int) pi[1];
 	int end=(int) pi[2];
 
-	if(refid<0 || refid >=(reader->header->n_targets))
+	if( (refid < 0) || (refid >= (reader->header->n_targets)) )
 		error("[gap_site_list_fetch] refid out of range!\n");
-	if(begin<0 || begin>=end || end>(reader->header->target_len[refid]))
+
+	if( (begin < 0) || (begin >= end) || (end > (reader->header->target_len[refid])) )
 		error("[gap_site_list_fetch] Begin or end out of range!\n");
 
-	site_list *l=site_list_init();
-	l->refid=refid;
-	bam_fetch(reader->x.bam,index,refid,begin,end,(void*)l,gap_site_list_fetch_func);
+	site_list *l = site_list_init();
+	l->refid = refid;
+	bam_fetch(reader->x.bam, index, refid, begin, end, (void*)l, gap_site_list_fetch_func);
 
 	SEXP list;
-	PROTECT(list=R_MakeExternalPtr( (void*)(l),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finalize_gap_site_list);
+	PROTECT(list = R_MakeExternalPtr( (void*)(l), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(list, finalize_gap_site_list, TRUE);
 	UNPROTECT(1);
-	Rprintf("[gap_site_list_fetch] Fetched list of size %i.\n",l->size);
+	Rprintf("[gap_site_list_fetch] Fetched list of size %lu.\n", l->size);
 	return list;
 }
 
@@ -1085,146 +1072,134 @@ SEXP gap_site_list_get_df(SEXP pGapList)
 	int nProtected=0;
 	int nCols=13;
 	SEXP dflist;
-	PROTECT(dflist=allocVector(VECSXP,nCols));
+	PROTECT(dflist = allocVector(VECSXP,nCols));
 	++nProtected;
-	int nRows=(l->size);
+	R_xlen_t nRows = (R_xlen_t) (l->size);
 	int i;
 
 	/* Column 0: id												*/
 	SEXP id_vector;
-	PROTECT(id_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(id_vector = allocVector(INTSXP, nRows));
 	// Column 1: refid											*/
 	SEXP refid_vector;
-	PROTECT(refid_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(refid_vector = allocVector(INTSXP, nRows));
 	/* Column 2: lstart											*/
 	SEXP lstart_vector;
-	PROTECT(lstart_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(lstart_vector = allocVector(INTSXP, nRows));
 	/* Column 3: lend											*/
 	SEXP lend_vector;
-	PROTECT(lend_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(lend_vector = allocVector(INTSXP, nRows));
 	/* Column 4: rstart											*/
 	SEXP rstart_vector;
-	PROTECT(rstart_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(rstart_vector = allocVector(INTSXP, nRows));
 	/* Column 5: rend											*/
 	SEXP rend_vector;
-	PROTECT(rend_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(rend_vector = allocVector(INTSXP, nRows));
 	/* Column 6: gap_len										*/
 	SEXP gap_len_vector;
-	PROTECT(gap_len_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(gap_len_vector = allocVector(INTSXP, nRows));
 	/* Column 7: nAligns										*/
 	SEXP nAligns_vector;
-	PROTECT(nAligns_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(nAligns_vector = allocVector(INTSXP, nRows));
 	/* Column 8: nProbes										*/
 	SEXP nProbes_vector;
-	PROTECT(nProbes_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(nProbes_vector = allocVector(INTSXP, nRows));
 	/* Column 9: nlstart										*/
 	SEXP nlstart_vector;
-	PROTECT(nlstart_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(nlstart_vector = allocVector(INTSXP, nRows));
 	/* Column 10: sum_left_cigar								*/
 	SEXP qsm_vector;
-	PROTECT(qsm_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(qsm_vector = allocVector(INTSXP, nRows));
 	/* Column 11: lcl											*/
 	SEXP nmcl_vector;
-	PROTECT(nmcl_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(nmcl_vector = allocVector(INTSXP, nRows));
 	/* Column 12: mcl											*/
 	SEXP mcl_vector;
-	PROTECT(mcl_vector=allocVector(INTSXP,nRows));
-	++nProtected;
+	PROTECT(mcl_vector = allocVector(INTSXP, nRows));
+
 
 
 	/* start position											*/
-	site_list_element *el,*curr;
-	curr=l->curr;
+	site_list_element *el, *curr;
+	curr = l->curr;
 	site_list_set_curr_first(l);
 
-	for(i=0;i<nRows;++i)
+	for(i=0; i < nRows; ++i)
 	{
 		el=site_list_get_curr_pp(l);
-		INTEGER(id_vector)                  [i]=i+1;
-		INTEGER(refid_vector)        		[i]=l->refid;
+		INTEGER(id_vector)                  [i] = i + 1;
+		INTEGER(refid_vector)        		[i] = l->refid;
 		/* lend - max(left_cigar_len)+1							*/
-		INTEGER(lstart_vector)        		[i]=el->lend-getByte(el->lcl,0)+1;
-		INTEGER(lend_vector)	            [i]=el->lend;
-		INTEGER(rstart_vector)	            [i]=el->rstart;
-		INTEGER(rend_vector)  		        [i]=el->rstart+el->r_cigar_size-1;
-		INTEGER(gap_len_vector)			    [i]=el->gap_len;
-		INTEGER(nAligns_vector)		        [i]=el->nAligns;
-		INTEGER(nProbes_vector)             [i]=el->nProbes;
-		INTEGER(nlstart_vector)	            [i]=bitmask_nPos(el->lcl);
-		INTEGER(qsm_vector)					[i]=bitmask_sumPos(el->lcl);
-		INTEGER(nmcl_vector)				[i]=el->lcl;
-		INTEGER(mcl_vector)					[i]=el->mcl;
+		INTEGER(lstart_vector)        		[i] = el->lend - getByte(el->lcl, 0) + 1;
+		INTEGER(lend_vector)	            [i] = el->lend;
+		INTEGER(rstart_vector)	            [i] = el->rstart;
+		INTEGER(rend_vector)  		        [i] = el->rstart + el->r_cigar_size - 1;
+		INTEGER(gap_len_vector)			    [i] = el->gap_len;
+		INTEGER(nAligns_vector)		        [i] = el->nAligns;
+		INTEGER(nProbes_vector)             [i] = el->nProbes;
+		INTEGER(nlstart_vector)	            [i] = bitmask_nPos(el->lcl);
+		INTEGER(qsm_vector)					[i] = bitmask_sumPos(el->lcl);
+		INTEGER(nmcl_vector)				[i] = el->lcl;
+		INTEGER(mcl_vector)					[i] = el->mcl;
+		site_list_el_destroy(el);
 	}
 	/* Reset curr position										*/
 	l->curr=curr;
 
-	SET_VECTOR_ELT(dflist,0,id_vector);
-	SET_VECTOR_ELT(dflist,1,refid_vector);
-	SET_VECTOR_ELT(dflist,2,lstart_vector);
-	SET_VECTOR_ELT(dflist,3,lend_vector);
-	SET_VECTOR_ELT(dflist,4,rstart_vector);
-	SET_VECTOR_ELT(dflist,5,rend_vector);
-	SET_VECTOR_ELT(dflist,6,gap_len_vector);
-	SET_VECTOR_ELT(dflist,7,nAligns_vector);
-	SET_VECTOR_ELT(dflist,8,nProbes_vector);
-	SET_VECTOR_ELT(dflist,9,nlstart_vector);
-	SET_VECTOR_ELT(dflist,10,qsm_vector);
-	SET_VECTOR_ELT(dflist,11,nmcl_vector);
-	SET_VECTOR_ELT(dflist,12,mcl_vector);
+	SET_VECTOR_ELT(dflist, 0, id_vector);
+	SET_VECTOR_ELT(dflist, 1, refid_vector);
+	SET_VECTOR_ELT(dflist, 2, lstart_vector);
+	SET_VECTOR_ELT(dflist, 3, lend_vector);
+	SET_VECTOR_ELT(dflist, 4, rstart_vector);
+	SET_VECTOR_ELT(dflist, 5, rend_vector);
+	SET_VECTOR_ELT(dflist, 6, gap_len_vector);
+	SET_VECTOR_ELT(dflist, 7, nAligns_vector);
+	SET_VECTOR_ELT(dflist, 8, nProbes_vector);
+	SET_VECTOR_ELT(dflist, 9, nlstart_vector);
+	SET_VECTOR_ELT(dflist, 10, qsm_vector);
+	SET_VECTOR_ELT(dflist, 11, nmcl_vector);
+	SET_VECTOR_ELT(dflist, 12, mcl_vector);
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Column Names
-	 */
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	SEXP col_names;
-	PROTECT(col_names=allocVector(STRSXP,nCols));
-	++nProtected;
+	PROTECT(col_names = allocVector(STRSXP, nCols));
 
+	SET_STRING_ELT(col_names, 0, mkChar("id"));
+	SET_STRING_ELT(col_names, 1, mkChar("refid"));
+	SET_STRING_ELT(col_names, 2, mkChar("lstart"));
+	SET_STRING_ELT(col_names, 3, mkChar("lend"));
+	SET_STRING_ELT(col_names, 4, mkChar("rstart"));
+	SET_STRING_ELT(col_names, 5, mkChar("rend"));
+	SET_STRING_ELT(col_names, 6, mkChar("gaplen"));
+	SET_STRING_ELT(col_names, 7, mkChar("nAligns"));
+	SET_STRING_ELT(col_names, 8, mkChar("nProbes"));
+	SET_STRING_ELT(col_names, 9, mkChar("nlstart"));
+	SET_STRING_ELT(col_names, 10, mkChar("lm_sum"));
+	SET_STRING_ELT(col_names, 11, mkChar("lcl"));
+	SET_STRING_ELT(col_names, 12, mkChar("mcl"));
+	setAttrib(dflist, R_NamesSymbol, col_names);
 
-	SET_STRING_ELT(col_names,0,mkChar("id"));
-	SET_STRING_ELT(col_names,1,mkChar("refid"));
-	SET_STRING_ELT(col_names,2,mkChar("lstart"));
-	SET_STRING_ELT(col_names,3,mkChar("lend"));
-	SET_STRING_ELT(col_names,4,mkChar("rstart"));
-	SET_STRING_ELT(col_names,5,mkChar("rend"));
-	SET_STRING_ELT(col_names,6,mkChar("gaplen"));
-	SET_STRING_ELT(col_names,7,mkChar("nAligns"));
-	SET_STRING_ELT(col_names,8,mkChar("nProbes"));
-	SET_STRING_ELT(col_names,9,mkChar("nlstart"));
-	SET_STRING_ELT(col_names,10,mkChar("lm_sum"));
-	SET_STRING_ELT(col_names,11,mkChar("lcl"));
-	SET_STRING_ELT(col_names,12,mkChar("mcl"));
-	setAttrib(dflist,R_NamesSymbol,col_names);
-
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Row Names
-	 */
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	SEXP row_names;
-    PROTECT(row_names=allocVector(STRSXP,nRows));
-    ++nProtected;
+    PROTECT(row_names = allocVector(STRSXP, (R_xlen_t) nRows));
 
-    int buf_size=128;
-    char *buf=(char*) calloc(buf_size,sizeof(char));
-    for(i=0;i<nRows;++i)
+    size_t buf_size = 128;
+    char *buf = (char*) calloc(buf_size,sizeof(char));
+    for(i=0; i<nRows; ++i)
     {
-    	sprintf(buf,"%i",i+1);
-    	SET_STRING_ELT(row_names,i,mkChar(buf));
+    	sprintf(buf, "%i", i + 1);
+    	SET_STRING_ELT(row_names, i, mkChar(buf));
     }
     free(buf);
-    setAttrib(dflist,R_RowNamesSymbol,row_names);
-	setAttrib(dflist,R_ClassSymbol,mkString("data.frame"));
-	UNPROTECT(nProtected);
+    setAttrib(dflist, R_RowNamesSymbol, row_names);
+	setAttrib(dflist, R_ClassSymbol, mkString("data.frame"));
+
+	// dflist, 13 columns, col.names, row.names
+	UNPROTECT(16);
 	return dflist;
 }
 
@@ -1243,39 +1218,39 @@ SEXP gap_site_list_get_ref_id(SEXP pGapList)
 
 SEXP gap_site_list_get_size(SEXP pGapList)
 {
-	if(TYPEOF(pGapList)!=EXTPTRSXP)
+	if(TYPEOF(pGapList) != EXTPTRSXP)
 		error("[gap_site_list_get_size] No external pointer!");
 
-	site_list *l=(site_list*)(R_ExternalPtrAddr(pGapList));
+	site_list *l = (site_list*) (R_ExternalPtrAddr(pGapList));
 	SEXP ans;
-	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->size);
+	PROTECT(ans = allocVector(REALSXP, 1));
+	REAL(ans)[0] = (double) (l->size);
 	UNPROTECT(1);
 	return ans;
 }
 
 SEXP gap_site_list_get_nAligns(SEXP pGapList)
 {
-	if(TYPEOF(pGapList)!=EXTPTRSXP)
+	if(TYPEOF(pGapList) != EXTPTRSXP)
 		error("[gap_site_list_get_nAligns] No external pointer!");
 
-	site_list *l=(site_list*)(R_ExternalPtrAddr(pGapList));
+	site_list *l = (site_list*) (R_ExternalPtrAddr(pGapList));
 	SEXP ans;
-	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->nAligns);
+	PROTECT(ans = allocVector(REALSXP, 1));
+	REAL(ans)[0] = (double) (l->nAligns);
 	UNPROTECT(1);
 	return ans;
 }
 
 SEXP gap_site_list_get_nAlignGaps(SEXP pGapList)
 {
-	if(TYPEOF(pGapList)!=EXTPTRSXP)
+	if(TYPEOF(pGapList) != EXTPTRSXP)
 		error("[gap_site_list_get_nAlignGaps] No external pointer!");
 
-	site_list *l=(site_list*)(R_ExternalPtrAddr(pGapList));
+	site_list *l = (site_list*) (R_ExternalPtrAddr(pGapList));
 	SEXP ans;
-	PROTECT(ans=allocVector(INTSXP,1));
-	INTEGER(ans)[0]=(l->nAlignGaps);
+	PROTECT(ans = allocVector(REALSXP, 1));
+	REAL(ans)[0] = (double) (l->nAlignGaps);
 	UNPROTECT(1);
 	return ans;
 }
@@ -1294,10 +1269,10 @@ SEXP gap_site_list_merge(SEXP pLhs, SEXP pRhs, SEXP pRef)
 	site_list *mrg=site_list_merge(lhs,rhs,INTEGER(pRef)[0]);
 
 	SEXP list;
-	PROTECT(list=R_MakeExternalPtr( (void*)(mrg),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finalize_gap_site_list);
+	PROTECT(list = R_MakeExternalPtr( (void*)(mrg), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(list, finalize_gap_site_list, TRUE);
 	UNPROTECT(1);
-	Rprintf("[gap_site_list_merge] Merge list of size %i.\n",mrg->size);
+	Rprintf("[gap_site_list_merge] Merge list of size %lu.\n", mrg->size);
 	return list;
 }
 
@@ -1309,8 +1284,8 @@ SEXP gap_site_list_copy(SEXP pGapList)
 	site_list *tar=site_list_copy(src);
 
 	SEXP list;
-	PROTECT(list=R_MakeExternalPtr((void*)(tar),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finalize_gap_site_list);
+	PROTECT(list = R_MakeExternalPtr((void*)(tar), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(list, finalize_gap_site_list, TRUE);
 	UNPROTECT(1);
 	return list;
 
@@ -1344,18 +1319,18 @@ static void finialize_gap_site_ll(SEXP ptr)
 {
 	if(TYPEOF(ptr)!=EXTPTRSXP)
 		error("[finalize_gap_site_ll] No external pointer!\n");
+	if(!R_ExternalPtrAddr(ptr)) return;
 	site_ll *l=(site_ll*) (R_ExternalPtrAddr(ptr));
 	site_ll_destroy(l);
-	l=NULL;
-	R_SetExternalPtrAddr(ptr,NULL);
+	R_ClearExternalPtr(ptr);
 }
 
 SEXP gap_site_ll_init()
 {
 	site_ll *l=site_ll_init();
 	SEXP list;
-	PROTECT(list=R_MakeExternalPtr( (void*)(l),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finialize_gap_site_ll);
+	PROTECT(list = R_MakeExternalPtr( (void*)(l), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(list, finialize_gap_site_ll, TRUE);
 	UNPROTECT(1);
 	return list;
 }
@@ -1375,12 +1350,13 @@ SEXP gap_site_ll_fetch(SEXP pReader, SEXP pIndex, SEXP pRefid, SEXP pStart, SEXP
 	if(LENGTH(pRefid)!=LENGTH(pStart) || LENGTH(pStart)!=LENGTH(pEnd))
 		error("[gap_site_ll_fetch] Unequal Length of pRefid, pStart and pEnd!\n");
 
+	if(!R_ExternalPtrAddr(pReader))
+		error("[gap_site_ll_fetch] Reader must not be NULL pointer!\n");
+	if(!R_ExternalPtrAddr(pIndex))
+		error("[gap_site_ll_fetch] Index must not be NULL pointer!\n");
+
 	samfile_t *reader=(samfile_t*)(R_ExternalPtrAddr(pReader));
 	bam_index_t *index=(bam_index_t*)(R_ExternalPtrAddr(pIndex));
-	if(reader==NULL)
-		error("[gap_site_ll_fetch] Reader must not be NULL pointer!\n");
-	if(index==NULL)
-		error("[gap_site_ll_fetch] Index must not be NULL pointer!\n");
 
 	int i,refid,begin,end;
 	site_list *sl;
@@ -1401,13 +1377,13 @@ SEXP gap_site_ll_fetch(SEXP pReader, SEXP pIndex, SEXP pRefid, SEXP pStart, SEXP
 		if(begin<0 || begin>=end || end>(reader->header->target_len[refid]))
 			error("[gap_site_ll_fetch] Begin or end out of range!");
 		bam_fetch(reader->x.bam,index,refid,begin,end,(void*)sl,gap_site_list_fetch_func);
-		if(sl->size>0)
-			site_ll_add_site_list(l,sl);
+		if(sl->size > 0LLU)
+			site_ll_add_site_list(l, sl);
 	}
 
 	SEXP list;
-	PROTECT(list=R_MakeExternalPtr( (void*)(l),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finialize_gap_site_ll);
+	PROTECT(list = R_MakeExternalPtr( (void*)(l), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(list, finialize_gap_site_ll, TRUE);
 	UNPROTECT(1);
 	return list;
 }
@@ -1471,9 +1447,9 @@ SEXP gap_site_ll_add_merge_pp(SEXP plSrc,SEXP prSrc,SEXP pTrg,SEXP pRefid)
 	//Rprintf("[gap_site_ll_add_merge_pp] r_src size: %u\n",rs->size);
 
 	// Do merging and add to target list
-	site_list *l=site_list_merge(ls,rs,refid);
-	l->nAligns=ls->nAligns+rs->nAligns;
-	l->nAlignGaps=ls->nAlignGaps+rs->nAlignGaps;
+	site_list *l = site_list_merge(ls,rs,refid);
+	l->nAligns = ls->nAligns + rs->nAligns;
+	l->nAlignGaps = ls->nAlignGaps + rs->nAlignGaps;
 
 	site_ll_add_site_list(trg,l);
 	//Rprintf("[gap_site_ll_add_merge_pp] Adding site_list of size: %u\trefid: %u\n",l->size,l->refid);
@@ -1483,22 +1459,22 @@ SEXP gap_site_ll_add_merge_pp(SEXP plSrc,SEXP prSrc,SEXP pTrg,SEXP pRefid)
 
 SEXP gap_site_ll_reset_refid(SEXP pGapList)
 {
-	if(TYPEOF(pGapList)!=EXTPTRSXP)
+	if(TYPEOF(pGapList) != EXTPTRSXP)
 		error("[gap_site_ll_reset_refid] No external pointer!");
 	site_ll *sll=(site_ll*)(R_ExternalPtrAddr(pGapList));
 
-	unsigned size=sll->size;
+	unsigned size = sll->size;
 	SEXP res;
-	PROTECT(res=allocVector(INTSXP,size));
+	PROTECT(res = allocVector(INTSXP,size));
 
 	site_list *l;
 	site_ll_set_curr_first(sll);
 	unsigned i;
-	for(i=0;i<size;++i)
+	for(i=0; i<size; ++i)
 	{
-		l=site_ll_get_curr_site_list_pp(sll);
-		l->refid=i;
-		INTEGER(res)[i]=i;
+		l = site_ll_get_curr_site_list_pp(sll);
+		l->refid = i;
+		INTEGER(res)[i] = (int) i;
 	}
 	UNPROTECT(1);
 	return(res);
@@ -1527,29 +1503,29 @@ SEXP gap_site_ll_get_summary_df(SEXP pGapList)
 
 	// Column 1: size
 	SEXP size_vector;
-	PROTECT(size_vector=allocVector(INTSXP,nRows));
+	PROTECT(size_vector=allocVector(REALSXP,nRows));
 	++nProtected;
 
 	// Column 2: nAligns
 	SEXP nalign_vector;
-	PROTECT(nalign_vector=allocVector(INTSXP,nRows));
+	PROTECT(nalign_vector=allocVector(REALSXP,nRows));
 	++nProtected;
 
 	// Column 3: nAlignGaps
 	SEXP ngap_vector;
-	PROTECT(ngap_vector=allocVector(INTSXP,nRows));
+	PROTECT(ngap_vector=allocVector(REALSXP,nRows));
 	++nProtected;
 
 	site_list *l;
 	site_ll_set_curr_first(sll);
 	unsigned i;
-	for(i=0;i<nRows;++i)
+	for(i=0; i<nRows; ++i)
 	{
 		l=site_ll_get_curr_site_list_pp(sll);
-		INTEGER(refid_vector) [i]=l->refid;
-		INTEGER(size_vector)  [i]=l->size;
-		INTEGER(nalign_vector)[i]=l->nAligns;
-		INTEGER(ngap_vector)  [i]=l->nAlignGaps;
+		INTEGER(refid_vector) [i] = l->refid;
+		REAL(size_vector)     [i] = (double) l->size;
+		REAL(nalign_vector)   [i] = (double) l->nAligns;
+		REAL(ngap_vector)     [i] = (double) l->nAlignGaps;
 	}
 
 	SET_VECTOR_ELT(dflist, 0,refid_vector);
@@ -1597,57 +1573,57 @@ SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames)
 	if(TYPEOF(pRefNames)!=STRSXP)
 		error("[gap_site_ll_get_df] pRefNames must be character!");
 
-	site_ll *sll=(site_ll*)(R_ExternalPtrAddr(pGapList));
+	site_ll *sll = (site_ll*)(R_ExternalPtrAddr(pGapList));
 
 	/* create data.frame											*/
-	unsigned nProtected=0;
-	unsigned nCols=13;
-	unsigned nRefs=sll->size;
-	unsigned nRows=sum_ll_sizes(sll);
+	unsigned nProtected = 0;
+	unsigned nCols = 13;
+	unsigned nRefs = sll->size;
+	unsigned nRows = sum_ll_sizes(sll);
 
 	SEXP dflist;
-	PROTECT(dflist=allocVector(VECSXP,nCols));
+	PROTECT(dflist = allocVector(VECSXP, nCols));
 	++nProtected;
 
 	/* Column 0: id													*/
 	SEXP id_vector;
-	PROTECT(id_vector=allocVector(INTSXP,nRows));
+	PROTECT(id_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 	/* Column 1: refid												*/
 	SEXP refid_vector;
-	PROTECT(refid_vector=allocVector(INTSXP,nRows));
+	PROTECT(refid_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 	// Column 2: lstart
 	SEXP lstart_vector;
-	PROTECT(lstart_vector=allocVector(INTSXP,nRows));
+	PROTECT(lstart_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 	/* Column 3: lend												*/
 	SEXP lend_vector;
-	PROTECT(lend_vector=allocVector(INTSXP,nRows));
+	PROTECT(lend_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 	/* Column 4: rstart												*/
 	SEXP rstart_vector;
-	PROTECT(rstart_vector=allocVector(INTSXP,nRows));
+	PROTECT(rstart_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 	/* Column 5: rend												*/
 	SEXP rend_vector;
-	PROTECT(rend_vector=allocVector(INTSXP,nRows));
+	PROTECT(rend_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 	/* Column 6: gap_len											*/
 	SEXP gap_len_vector;
-	PROTECT(gap_len_vector=allocVector(INTSXP,nRows));
+	PROTECT(gap_len_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 	/* Column 7: nAligns											*/
 	SEXP nAligns_vector;
-	PROTECT(nAligns_vector=allocVector(INTSXP,nRows));
+	PROTECT(nAligns_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 	/* Column 8: nAligns											*/
 	SEXP nProbes_vector;
-	PROTECT(nProbes_vector=allocVector(INTSXP,nRows));
+	PROTECT(nProbes_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 	/* Column 9: nlstart: number of different lstart positions on gap_site	*/
 	SEXP nlstart_vector;
-	PROTECT(nlstart_vector=allocVector(INTSXP,nRows));
+	PROTECT(nlstart_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1658,17 +1634,17 @@ SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames)
 	 *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	SEXP qsm_vector;
-	PROTECT(qsm_vector=allocVector(INTSXP,nRows));
+	PROTECT(qsm_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 
 	/* Column 11: nmcl												*/
 	SEXP nmcl_vector;
-	PROTECT(nmcl_vector=allocVector(INTSXP,nRows));
+	PROTECT(nmcl_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 
 	/* Column 12: gqs												*/
 	SEXP gqs_vector;
-	PROTECT(gqs_vector=allocVector(INTSXP,nRows));
+	PROTECT(gqs_vector = allocVector(INTSXP, nRows));
 	++nProtected;
 
 	/* site_ll_element *ell;										*/
@@ -1676,31 +1652,32 @@ SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames)
 	site_list_element *el;
 
 	site_ll_set_curr_first(sll);
-	unsigned i,j,k=0;
+	unsigned i, j, k = 0;
 
 	/* Scaling factor: Maximum value for gqs is read-length			*/
-	unsigned smcl_denom=bitmap_size*nQsm;
+	unsigned smcl_denom = bitmap_size * nQsm;
 
-	for(i=0;i<nRefs;++i)
+	for(i=0; i < nRefs; ++i)
 	{
 		l=site_ll_get_curr_site_list_pp(sll);
 		site_list_set_curr_first(l);
 		for(j=0;j<l->size;++j,++k)
 		{
-			el=site_list_get_curr_pp(l);
-			INTEGER(id_vector)                  [k]=k+1; 						/* row-id: should start with 1	*/
-			INTEGER(refid_vector)        		[k]=l->refid+1;
-			INTEGER(lstart_vector)        		[k]=el->lend-getByte(el->lcl,0)+1;
-			INTEGER(lend_vector)	            [k]=el->lend;
-			INTEGER(rstart_vector)	            [k]=el->rstart;
-			INTEGER(rend_vector)  		        [k]=el->rstart+el->r_cigar_size-1;
-			INTEGER(gap_len_vector)			    [k]=el->gap_len;
-			INTEGER(nAligns_vector)		        [k]=el->nAligns;
-			INTEGER(nProbes_vector)             [k]=el->nProbes;
-			INTEGER(nlstart_vector)	            [k]=bitmask_nPos(el->lcl);
-			INTEGER(qsm_vector)					[k]=getSmcl(el->mcl); 			/* smcl = sum of minimal cigar size	*/
-			INTEGER(nmcl_vector)				[k]=bitmask_nPos(el->mcl);
-			INTEGER(gqs_vector)                 [k]=INTEGER(nlstart_vector)[k]*INTEGER(qsm_vector)[k]*2*10/smcl_denom;
+			el = site_list_get_curr_pp(l);
+			INTEGER(id_vector)                  [k] = k + 1; 						/* row-id: should start with 1	*/
+			INTEGER(refid_vector)        		[k] = l->refid + 1;
+			INTEGER(lstart_vector)        		[k] = el->lend - getByte(el->lcl, 0) + 1;
+			INTEGER(lend_vector)	            [k] = el->lend;
+			INTEGER(rstart_vector)	            [k] = el->rstart;
+			INTEGER(rend_vector)  		        [k] = el->rstart + el->r_cigar_size - 1;
+			INTEGER(gap_len_vector)			    [k] = el->gap_len;
+			INTEGER(nAligns_vector)		        [k] = (int) el->nAligns;
+			INTEGER(nProbes_vector)             [k] = (int) el->nProbes;
+			INTEGER(nlstart_vector)	            [k] = bitmask_nPos(el->lcl);
+			INTEGER(qsm_vector)					[k] = getSmcl(el->mcl); 			/* smcl = sum of minimal cigar size	*/
+			INTEGER(nmcl_vector)				[k] = bitmask_nPos(el->mcl);
+			INTEGER(gqs_vector)                 [k] = INTEGER(nlstart_vector)[k] * INTEGER(qsm_vector)[k] * 2 * 10 / smcl_denom;
+			site_list_el_destroy(el);
 		}
 	}
 
@@ -1709,72 +1686,72 @@ SEXP gap_site_ll_get_df(SEXP pGapList,SEXP pRefNames)
 	 */
 
 	SEXP levs;
-	int nLevels=LENGTH(pRefNames);
-	PROTECT(levs=allocVector(STRSXP,nLevels));
+	int nLevels = LENGTH(pRefNames);
+	PROTECT(levs = allocVector(STRSXP, nLevels));
 	++nProtected;
 
-	for(i=0;i<nLevels;++i)
-		SET_STRING_ELT(levs,i,STRING_ELT(pRefNames,i));
+	for(i=0; i<nLevels; ++i)
+		SET_STRING_ELT(levs, i, STRING_ELT(pRefNames, i));
 	setAttrib(refid_vector,R_LevelsSymbol,levs);
 
 	SEXP csymb;
-	PROTECT(csymb=mkString("factor"));
+	PROTECT(csymb = mkString("factor"));
 	++nProtected;
-	setAttrib(refid_vector,R_ClassSymbol,csymb);
+	setAttrib(refid_vector, R_ClassSymbol, csymb);
 
-	SET_VECTOR_ELT(dflist,0,id_vector);
-	SET_VECTOR_ELT(dflist,1,refid_vector);
-	SET_VECTOR_ELT(dflist,2,lstart_vector);
-	SET_VECTOR_ELT(dflist,3,lend_vector);
-	SET_VECTOR_ELT(dflist,4,rstart_vector);
-	SET_VECTOR_ELT(dflist,5,rend_vector);
-	SET_VECTOR_ELT(dflist,6,gap_len_vector);
-	SET_VECTOR_ELT(dflist,7,nAligns_vector);
-	SET_VECTOR_ELT(dflist,8,nProbes_vector);
-	SET_VECTOR_ELT(dflist,9,nlstart_vector);
-	SET_VECTOR_ELT(dflist,10,qsm_vector);
-	SET_VECTOR_ELT(dflist,11,nmcl_vector);
-	SET_VECTOR_ELT(dflist,12,gqs_vector);
+	SET_VECTOR_ELT(dflist, 0, id_vector);
+	SET_VECTOR_ELT(dflist, 1, refid_vector);
+	SET_VECTOR_ELT(dflist, 2, lstart_vector);
+	SET_VECTOR_ELT(dflist, 3, lend_vector);
+	SET_VECTOR_ELT(dflist, 4, rstart_vector);
+	SET_VECTOR_ELT(dflist, 5, rend_vector);
+	SET_VECTOR_ELT(dflist, 6, gap_len_vector);
+	SET_VECTOR_ELT(dflist, 7, nAligns_vector);
+	SET_VECTOR_ELT(dflist, 8, nProbes_vector);
+	SET_VECTOR_ELT(dflist, 9, nlstart_vector);
+	SET_VECTOR_ELT(dflist, 10, qsm_vector);
+	SET_VECTOR_ELT(dflist, 11, nmcl_vector);
+	SET_VECTOR_ELT(dflist, 12, gqs_vector);
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Column Names
 	 */
 	SEXP col_names;
-	PROTECT(col_names=allocVector(STRSXP,nCols));
+	PROTECT(col_names = allocVector(STRSXP, nCols));
 	++nProtected;
 
-	SET_STRING_ELT(col_names, 0,mkChar("id"));
-	SET_STRING_ELT(col_names, 1,mkChar("seqid")); // Needed for spliceSites
-	SET_STRING_ELT(col_names, 2,mkChar("lstart"));
-	SET_STRING_ELT(col_names, 3,mkChar("lend"));
-	SET_STRING_ELT(col_names, 4,mkChar("rstart"));
-	SET_STRING_ELT(col_names, 5,mkChar("rend"));
-	SET_STRING_ELT(col_names, 6,mkChar("gaplen"));
-	SET_STRING_ELT(col_names, 7,mkChar("nAligns"));
-	SET_STRING_ELT(col_names, 8,mkChar("nProbes"));
-	SET_STRING_ELT(col_names, 9,mkChar("nlstart"));
-	SET_STRING_ELT(col_names,10,mkChar("qsm"));
-	SET_STRING_ELT(col_names,11,mkChar("nmcl"));
-	SET_STRING_ELT(col_names,12,mkChar("gqs"));
-	setAttrib(dflist,R_NamesSymbol,col_names);
+	SET_STRING_ELT(col_names,  0, mkChar("id"));
+	SET_STRING_ELT(col_names,  1, mkChar("seqid")); // Needed for spliceSites
+	SET_STRING_ELT(col_names,  2, mkChar("lstart"));
+	SET_STRING_ELT(col_names,  3, mkChar("lend"));
+	SET_STRING_ELT(col_names,  4, mkChar("rstart"));
+	SET_STRING_ELT(col_names,  5, mkChar("rend"));
+	SET_STRING_ELT(col_names,  6, mkChar("gaplen"));
+	SET_STRING_ELT(col_names,  7, mkChar("nAligns"));
+	SET_STRING_ELT(col_names,  8, mkChar("nProbes"));
+	SET_STRING_ELT(col_names,  9, mkChar("nlstart"));
+	SET_STRING_ELT(col_names, 10, mkChar("qsm"));
+	SET_STRING_ELT(col_names, 11, mkChar("nmcl"));
+	SET_STRING_ELT(col_names, 12, mkChar("gqs"));
+	setAttrib(dflist, R_NamesSymbol, col_names);
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Row Names
 	 */
 	SEXP row_names;
-    PROTECT(row_names=allocVector(STRSXP,nRows));
+    PROTECT(row_names = allocVector(STRSXP, nRows));
     ++nProtected;
 
-	int buf_size=128;
-	char *buf=(char*) calloc(buf_size,sizeof(char));
-    for(i=0;i<nRows;++i)
+	int buf_size = 128;
+	char *buf = (char*) calloc(buf_size, sizeof(char));
+    for(i=0; i < nRows; ++i)
     {
-    	sprintf(buf,"%i",i);
-    	SET_STRING_ELT(row_names,i,mkChar(buf));
+    	sprintf(buf, "%i", i);
+    	SET_STRING_ELT(row_names, i, mkChar(buf));
     }
     free(buf);
-    setAttrib(dflist,R_RowNamesSymbol,row_names);
-	setAttrib(dflist,R_ClassSymbol,mkString("data.frame"));
+    setAttrib(dflist, R_RowNamesSymbol, row_names);
+	setAttrib(dflist, R_ClassSymbol, mkString("data.frame"));
 	UNPROTECT(nProtected);
 	return dflist;
 }
@@ -1825,10 +1802,10 @@ static void finalize_bam_range(SEXP ptr)
 {
 	if(TYPEOF(ptr)!=EXTPTRSXP)
 		error("[finalize_bam_range] No external pointer!\n");
+	if(!R_ExternalPtrAddr(ptr)) return;
 	align_list *l=(align_list *)(R_ExternalPtrAddr(ptr));
 	destroy_align_list(l);
-	l=NULL;
-	R_SetExternalPtrAddr(ptr,NULL);
+	R_ClearExternalPtr(ptr);
 }
 
 
@@ -1836,91 +1813,118 @@ SEXP bam_range_init()
 {
 	align_list *l=init_align_list();
 	SEXP list;
-	PROTECT(list=R_MakeExternalPtr( (void*)(l),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finalize_bam_range);
+	PROTECT(list = R_MakeExternalPtr( (void*)(l), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(list, finalize_bam_range, TRUE);
 	UNPROTECT(1);
 	return list;
 }
 
 static int range_fetch_func(const bam1_t *b, void *data)
 {
-	align_list *l=(align_list*)data;
-	align_list_push_back(l,b);
+	align_list *l = (align_list*) data;
+	align_list_push_back(l, b);
 	return 0;
 }
 
-static int range_fetch_complex_func(const bam1_t *b,void *data)
+static int range_fetch_complex_func(const bam1_t *b, void *data)
 {
-	align_list *l=(align_list*)data;
-	if(b->core.n_cigar>1)
-		align_list_push_back(l,b);
+	align_list *l = (align_list*) data;
+
+	if(b->core.n_cigar > 1)
+		align_list_push_back(l, b);
+
+	return 0;
+}
+
+static int count_fetch_func(const bam1_t *b, void *data)
+{
+	seg_align_counts *c = (seg_align_counts*) data;
+	seg_align_count(c, b);
+	return 0;
+}
+
+static int count_fetch_complex_func(const bam1_t *b, void *data)
+{
+	seg_align_counts *c = (seg_align_counts*) data;
+
+	if(b->core.n_cigar > 1)
+		seg_align_count(c, b);
+
 	return 0;
 }
 
 
-SEXP bam_range_fetch(SEXP pReader,SEXP pIndex,SEXP pCoords,SEXP pComplex)
+
+SEXP bam_range_fetch(SEXP pReader, SEXP pIndex, SEXP pCoords, SEXP pComplex)
 {
-	if(TYPEOF(pReader)!=EXTPTRSXP)
+	if(TYPEOF(pReader)!= EXTPTRSXP)
 		error("[bam_range_fetch] pReader is No external pointer!\n");
-	if(TYPEOF(pIndex)!=EXTPTRSXP)
+
+	if(TYPEOF(pIndex)!= EXTPTRSXP)
 		error("[bam_range_fetch] pIndex is No external pointer!\n");
-	if(TYPEOF(pCoords)!=REALSXP)
+
+	if(TYPEOF(pCoords)!= REALSXP)
 		error("[bam_range_fetch] pCoords is no REAL!\n");
-	if(LENGTH(pCoords)!=3)
+
+	if(LENGTH(pCoords) != 3)
 		error("[bam_range_fetch] pCoords must contain three values (refid,begin,end)!\n");
-	if(TYPEOF(pComplex)!=LGLSXP)
+
+	if(TYPEOF(pComplex) != LGLSXP)
 		error("[bam_range_fetch] pComplex must be logical!\n");
+
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Extract reader and index pointer
 	 */
-	samfile_t *reader=(samfile_t*)(R_ExternalPtrAddr(pReader));
-	bam_index_t *index=(bam_index_t*)(R_ExternalPtrAddr(pIndex));
-	if(reader==NULL)
+	samfile_t *reader = (samfile_t*) (R_ExternalPtrAddr(pReader));
+	bam_index_t *index = (bam_index_t*) (R_ExternalPtrAddr(pIndex));
+
+	if(reader == NULL)
 		error("[bam_range_fetch] Reader must not be NULL pointer!\n");
-	if(index==NULL)
+	if(index == NULL)
 		error("[bam_range_fetch] Index must not be NULL pointer!\n");
 
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 *  Get coordinates
 	 */
-	double *pi=REAL(pCoords);
-	int refid=(int) pi[0];
-	int begin=(int) pi[1];
-	int end=(int) pi[2];
+	double *pi = REAL(pCoords);
+	int refid = (int) pi[0];
+	int begin = (int) pi[1];
+	int end = (int) pi[2];
 
-	if(refid<0 || refid >=(reader->header->n_targets))
+	if( (refid < 0) || (refid >= (reader->header->n_targets)) )
 		error("[bam_range_fetch] refid out of range!\n");
-	if(begin<0 || begin>=end || end>(reader->header->target_len[refid]))
+
+	if( (begin < 0) || (begin >= end) || (end > (reader->header->target_len[refid])) )
 		error("[bam_range_fetch] Begin or end out of range!\n");
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Init align_list
 	 */
-	align_list *l=init_align_list();
-	l->range_begin=begin;
-	l->range_end=end;
-	l->seqid=refid;
-	l->complex= (LOGICAL(pComplex)[0]==TRUE) ? 1 : 0;
+	align_list *l = init_align_list();
+	l->range_begin = begin;
+	l->range_end = end;
+	l->seqid = refid;
+	l->complex = (LOGICAL(pComplex)[0]==TRUE) ? 1 : 0;
 	
 	/* seqname and LN												*/
-	bam_header_t* header=reader->header;
+	bam_header_t* header = reader->header;
 	int nchar = strlen(header->target_name[refid]);
-	l->refname=calloc(nchar+1,sizeof(char));
+	l->refname = calloc(nchar+1,sizeof(char));
 	strcpy(l->refname,header->target_name[refid]);
-	l->seq_LN=header->target_len[refid];
+	l->seq_LN = header->target_len[refid];
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Fetch: Retrieve only complex aligns (nCigar>1) when pComplex is set:
 	 */
-	if(LOGICAL(pComplex)[0]==TRUE)
+	if(LOGICAL(pComplex)[0] == TRUE)
 		bam_fetch(reader->x.bam, index, refid, begin, end, (void*)l, range_fetch_complex_func);
 	else
 		bam_fetch(reader->x.bam, index, refid, begin, end, (void*)l, range_fetch_func);
 
 	// Wind back
-    l->curr_el=NULL;
+    l->curr_el = NULL;
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Create bamRange S4 object
@@ -1929,15 +1933,12 @@ SEXP bam_range_fetch(SEXP pReader,SEXP pIndex,SEXP pCoords,SEXP pComplex)
     PROTECT(bam_range = NEW_OBJECT(MAKE_CLASS("bamRange")));
 
     SEXP list;
-	PROTECT(list=R_MakeExternalPtr( (void*)(l),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(list,finalize_bam_range);
-	SEXP list_name;
-	PROTECT(list_name=Rf_mkString("range"));
-    bam_range=SET_SLOT(bam_range,list_name,list);
-
+	PROTECT(list = R_MakeExternalPtr( (void*)(l), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(list, finalize_bam_range, TRUE);
+    bam_range = SET_SLOT(bam_range, install("range"), list);
 
     /* Return													*/
-	UNPROTECT(3);
+	UNPROTECT(2);
 	return bam_range;
 }
 
@@ -2017,8 +2018,8 @@ SEXP bam_range_get_next_align(SEXP pRange)
 		return R_NilValue;
 
 	SEXP ptr;
-	PROTECT(ptr=R_MakeExternalPtr((void*)(align),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(ptr,finalize_bam_align);
+	PROTECT(ptr = R_MakeExternalPtr((void*)(align), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(ptr, finalize_bam_align, TRUE);
 	UNPROTECT(1);
 	return ptr;
 }
@@ -2033,8 +2034,8 @@ SEXP bam_range_get_prev_align(SEXP pRange)
 		return R_NilValue;
 
 	SEXP ptr;
-	PROTECT(ptr=R_MakeExternalPtr((void*)(align),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(ptr,finalize_bam_align);
+	PROTECT(ptr = R_MakeExternalPtr((void*)(align), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(ptr, finalize_bam_align, TRUE);
 	UNPROTECT(1);
 	return ptr;
 }
@@ -2187,7 +2188,7 @@ SEXP bam_range_get_align_df(SEXP pRange)
 
 		SET_STRING_ELT(cig_vector,i,mkChar(buf));
 		//Rprintf("%i\t%s\n",i,buf);
-		clear_buf(buf,buf_size);
+		clear_buf(buf, buf_size);
 
 
 		INTEGER(flag_vector)[i]=(align->core.flag);
@@ -2397,16 +2398,16 @@ SEXP bam_range_get_params(SEXP pRange)
 
 SEXP bam_range_get_refname(SEXP pRange)
 {
-	if(TYPEOF(pRange)!=EXTPTRSXP)
+	if(TYPEOF(pRange) != EXTPTRSXP)
 		error("[bam_range_get_coords] pRange is No external pointer!\n");
-	align_list *l=(align_list*)(R_ExternalPtrAddr(pRange));
+	align_list *l = (align_list*)(R_ExternalPtrAddr(pRange));
 
 	if(!l->refname)
 		return R_NilValue;
 
 	SEXP ans;
-	PROTECT(ans=allocVector(STRSXP,1));
-	SET_STRING_ELT(ans,0,mkChar(l->refname));
+	PROTECT(ans = allocVector(STRSXP, 1));
+	SET_STRING_ELT(ans, 0, mkChar(l->refname));
 	UNPROTECT(1);
 	return ans;
 }
@@ -2765,7 +2766,7 @@ SEXP bam_range_get_qual_df(SEXP pRange)
 	 */
 	SEXP col_names;
 	PROTECT(col_names=allocVector(STRSXP,nCols));
-	char *buf=R_alloc(buf_size,sizeof(char));
+	char *buf = R_alloc(buf_size, sizeof(char));
 	// 1-based (as indexing of sequences in R)
 	for(i=0;i<nCols;++i)
 	{
@@ -2926,26 +2927,27 @@ SEXP bam_range_get_align_depth(SEXP pRange,SEXP pGap)
 	return alignDepth;
 }
 
+
 SEXP bam_range_count_nucs(SEXP pRange)
 {
-	if(TYPEOF(pRange)!=EXTPTRSXP)
+	if(TYPEOF(pRange) != EXTPTRSXP)
 		error("[bam_range_count_nucs] No external pointer!");
 
-	align_list *l=(align_list*)(R_ExternalPtrAddr(pRange));
+	align_list *l = (align_list*)(R_ExternalPtrAddr(pRange));
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Prepare counter
 	 */
-	const unsigned nCount=5;
-	SEXP pCount=PROTECT(allocVector(INTSXP,nCount));
-	int *count=INTEGER(pCount);
-	memset(count,0,nCount*sizeof(int));
+	const unsigned nCount = 5;
+	SEXP pCount = PROTECT(allocVector(INTSXP, nCount));
+	int *count = INTEGER(pCount);
+	memset(count, 0, nCount * sizeof(int));
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Prepare list
 	 */
-	int32_t seq_len,i,j;
-	align_element *e=l->curr_el;
+	int32_t seq_len, i, j;
+	align_element *e = l->curr_el;
 	const bam1_t *align;
 	unsigned char *raw_seq;
 
@@ -2953,16 +2955,16 @@ SEXP bam_range_count_nucs(SEXP pRange)
 	 * Count nucleotides on align sequences
 	 */
 	wind_back(l);
-	for(i=0;i<l->size;++i)
+	for(i=0; i < l->size; ++i)
 	{
-		align=get_const_next_align(l);
-		seq_len=align->core.l_qseq;
-		raw_seq=bam1_seq(align);
-		for(j=0;j<seq_len;++j)
+		align = get_const_next_align(l);
+		seq_len = align->core.l_qseq;
+		raw_seq = bam1_seq(align);
+		for(j=0; j < seq_len; ++j)
 			++count[bam_nt16_dna_table[bam1_seqi(raw_seq,j)]];
 	}
 	/* Restore curr_el pointer								*/
-	l->curr_el=e;
+	l->curr_el = e;
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Names for pCount
@@ -2970,12 +2972,12 @@ SEXP bam_range_count_nucs(SEXP pRange)
 	SEXP names_vec;
 	PROTECT(names_vec=allocVector(STRSXP,nCount));
 
-	SET_STRING_ELT(names_vec,0,mkChar("A"));
-	SET_STRING_ELT(names_vec,1,mkChar("C"));
-	SET_STRING_ELT(names_vec,2,mkChar("G"));
-	SET_STRING_ELT(names_vec,3,mkChar("T"));
-	SET_STRING_ELT(names_vec,4,mkChar("N"));
-	setAttrib(pCount,R_NamesSymbol,names_vec);
+	SET_STRING_ELT(names_vec, 0, mkChar("A"));
+	SET_STRING_ELT(names_vec, 1, mkChar("C"));
+	SET_STRING_ELT(names_vec, 2, mkChar("G"));
+	SET_STRING_ELT(names_vec, 3, mkChar("T"));
+	SET_STRING_ELT(names_vec, 4, mkChar("N"));
+	setAttrib(pCount, R_NamesSymbol, names_vec);
 
 	UNPROTECT(2);
 	return pCount;
@@ -3011,10 +3013,8 @@ SEXP bam_range_idx_copy(SEXP pRange, SEXP pIndex)
 
     SEXP list;
 	PROTECT(list = R_MakeExternalPtr( (void*)(res), R_NilValue, R_NilValue));
-	R_RegisterCFinalizer(list, finalize_bam_range);
-	SEXP list_name;
-	PROTECT(list_name = Rf_mkString("range"));
-    bam_range = SET_SLOT(bam_range, list_name,list);
+	R_RegisterCFinalizerEx(list, finalize_bam_range, TRUE);
+    bam_range = SET_SLOT(bam_range, install("range"),list);
 
     /* Return													*/
 	UNPROTECT(3);
@@ -3032,10 +3032,11 @@ static void finalize_bam_header(SEXP ptr)
 {
 	if(TYPEOF(ptr)!=EXTPTRSXP)
 		error("[finalize_bam_header] No external pointer!");
+	if(!R_ExternalPtrAddr(ptr)) return;
+
 	bam_header_t* header=(bam_header_t*)(R_ExternalPtrAddr(ptr));
-	if(header)
-		bam_header_destroy(header);
-	R_SetExternalPtrAddr(ptr,NULL);
+	bam_header_destroy(header);
+	R_ClearExternalPtr(ptr);
 }
 
 SEXP init_bam_header(SEXP pHeaderText)
@@ -3058,8 +3059,8 @@ SEXP init_bam_header(SEXP pHeaderText)
 	bam_init_header_hash(h);
 
 	SEXP ptr;
-	PROTECT(ptr=R_MakeExternalPtr((void*)h,R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(ptr,finalize_bam_header);
+	PROTECT(ptr = R_MakeExternalPtr((void*)h, R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(ptr, finalize_bam_header, TRUE);
 	UNPROTECT(1);
 	return ptr;
 }
@@ -3069,10 +3070,12 @@ SEXP bam_header_get_header_text(SEXP pHeader)
 	if(TYPEOF(pHeader)!=EXTPTRSXP)
 		error("[bam_header_get_header_text] No external pointer!");
 
+	if(!R_ExternalPtrAddr(pHeader)) return R_NilValue;
+
 	bam_header_t* header=(bam_header_t*)(R_ExternalPtrAddr(pHeader));
 	SEXP ans;
 	PROTECT(ans=Rf_allocVector(STRSXP,1));
-	SET_STRING_ELT(ans,0,mkChar(header->text));
+	SET_STRING_ELT(ans, 0, mkChar(header->text));
 	UNPROTECT(1);
 	return ans;
 }
@@ -3085,13 +3088,13 @@ static void finalize_bam_writer(SEXP ptr)
 {
 	if(TYPEOF(ptr)!=EXTPTRSXP)
 		error("[finalize_bam_writer] No external pointer!");
+
+	if(!R_ExternalPtrAddr(ptr)) return;
+
 	samfile_t *writer=(samfile_t*)(R_ExternalPtrAddr(ptr));
-	if(writer)
-	{
-		samclose(writer);
-		R_SetExternalPtrAddr(ptr,NULL);
-		Rprintf("[bamWriter] finalized.\n");
-	}
+	samclose(writer);
+	R_ClearExternalPtr(ptr);
+	Rprintf("[bamWriter] finalized.\n");
 }
 
 SEXP bam_writer_open(SEXP pHeader,SEXP pFilename)
@@ -3107,8 +3110,8 @@ SEXP bam_writer_open(SEXP pHeader,SEXP pFilename)
 		error("[bam_writer_open] samopen returned NULL pointer!\n");
 
 	SEXP ptr;
-	PROTECT(ptr=R_MakeExternalPtr( (void*) (writer),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(ptr,finalize_bam_writer);
+	PROTECT(ptr = R_MakeExternalPtr( (void*) (writer), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(ptr, finalize_bam_writer, TRUE);
 	UNPROTECT(1);
 	return ptr;
 }
@@ -3124,8 +3127,8 @@ SEXP bam_reader_open_writer(SEXP pReader,SEXP pFilename)
 	samfile_t *writer=samopen(CHAR(STRING_ELT(pFilename,0)),"wb",reader->header);
 
 	SEXP ptr;
-	PROTECT(ptr=R_MakeExternalPtr( (void*) (writer),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(ptr,finalize_bam_writer);
+	PROTECT(ptr = R_MakeExternalPtr( (void*) (writer), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(ptr, finalize_bam_writer, TRUE);
 	UNPROTECT(1);
 	return ptr;
 }
@@ -3158,7 +3161,7 @@ SEXP bam_writer_close(SEXP pWriter)
 
 	samfile_t *writer= (samfile_t*) (R_ExternalPtrAddr(pWriter));
 	samclose(writer);
-	R_SetExternalPtrAddr(pWriter,NULL);
+	R_ClearExternalPtr(pWriter);
 	Rprintf("[bamWriter] closed.\n");
 	return R_NilValue;
 }
@@ -3168,11 +3171,12 @@ SEXP bam_writer_close(SEXP pWriter)
  */
 
 
-static void finalize_bam_align(SEXP pAlign)
+static void finalize_bam_align(SEXP ptr)
 {
-	if(TYPEOF(pAlign)!=EXTPTRSXP)
+	if(TYPEOF(ptr)!=EXTPTRSXP)
 		error("[finalize_bam_align] No external pointer!");
-	bam1_t *align= (bam1_t*)(R_ExternalPtrAddr(pAlign));
+	if(!R_ExternalPtrAddr(ptr)) return;
+	bam1_t *align= (bam1_t*)(R_ExternalPtrAddr(ptr));
 	bam_destroy1(align);	// checks for >0!
 }
 
@@ -3180,6 +3184,8 @@ SEXP bam_align_get_name(SEXP pAlign)
 {
 	if(TYPEOF(pAlign)!=EXTPTRSXP)
 		error("[bam_align_get_name] No external pointer!");
+
+	if(!R_ExternalPtrAddr(pAlign)) return R_NilValue;
 	bam1_t *align= (bam1_t*)(R_ExternalPtrAddr(pAlign));
 
 	SEXP ans;
@@ -3193,6 +3199,8 @@ SEXP bam_align_get_refid(SEXP pAlign)
 {
 	if(TYPEOF(pAlign)!=EXTPTRSXP)
 		error("[bam_align_getRefID] No external pointer!");
+
+	if(!R_ExternalPtrAddr(pAlign)) return R_NilValue;
 	bam1_t *align= (bam1_t*) (R_ExternalPtrAddr(pAlign));
 
 	SEXP ans;
@@ -3582,6 +3590,20 @@ SEXP bam_align_is_pcr_or_optical_dup(SEXP pAlign)
 	return ans;
 }
 
+SEXP bam_align_is_supplementary_align(SEXP pAlign)
+{
+	if(TYPEOF(pAlign)!=EXTPTRSXP)
+		error("[bam_align_is_supplementary_align] No external pointer!");
+
+	bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
+
+	SEXP ans;
+	PROTECT(ans=allocVector(LGLSXP,1));
+	LOGICAL(ans)[0]=align->core.flag & BAM_FSUPPLEMENTARY;
+	UNPROTECT(1);
+	return ans;
+}
+
 SEXP bam_align_get_flag(SEXP pAlign)
 {
 	if(TYPEOF(pAlign)!=EXTPTRSXP)
@@ -3742,6 +3764,20 @@ SEXP bam_align_set_is_pcr_or_optical_dup(SEXP pAlign, SEXP val)
 	return R_NilValue;
 }
 
+
+SEXP bam_align_set_is_supplementary_align(SEXP pAlign, SEXP val)
+{
+	if(TYPEOF(pAlign)!=EXTPTRSXP)
+		error("[bam_align_set_is_supplementary_align] No external pointer!");
+	if(TYPEOF(val)!=LGLSXP)
+		error("[bam_align_set_is_supplementary_align] No bool value!");
+
+	bam1_t *align=(bam1_t*)(R_ExternalPtrAddr(pAlign));
+	set_flag(align,*(LOGICAL(AS_LOGICAL(val))),BAM_FSUPPLEMENTARY);
+	return R_NilValue;
+}
+
+
 SEXP bam_align_set_flag(SEXP pAlign, SEXP val)
 {
 	if(TYPEOF(pAlign)!=EXTPTRSXP)
@@ -3753,6 +3789,9 @@ SEXP bam_align_set_flag(SEXP pAlign, SEXP val)
 	align->core.flag=*INTEGER(val);
 	return R_NilValue;
 }
+
+
+
 
 SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 {
@@ -3943,8 +3982,8 @@ SEXP bam_align_create(SEXP pStrVals, SEXP pIntVals)
 	align->data_len=doff;
 
 	SEXP ptr;
-	PROTECT(ptr=R_MakeExternalPtr((void*)(align),R_NilValue,R_NilValue));
-	R_RegisterCFinalizer(ptr,finalize_bam_align);
+	PROTECT(ptr = R_MakeExternalPtr((void*)(align), R_NilValue, R_NilValue));
+	R_RegisterCFinalizerEx(ptr, finalize_bam_align, TRUE);
 	UNPROTECT(1);
 	return ptr;
 }
@@ -4433,6 +4472,185 @@ SEXP count_text_lines(SEXP pInfile)
 	return res;
 }
 
+SEXP bam_count_segment_aligns(SEXP pReader, SEXP pIndex, SEXP pCoords, SEXP pSegments, SEXP pComplex)
+{
+	if(TYPEOF(pReader)!=EXTPTRSXP)
+		error("[bam_count_segment_aligns] pReader is No external pointer!\n");
+
+	if(TYPEOF(pIndex)!=EXTPTRSXP)
+		error("[bam_count_segment_aligns] pIndex is No external pointer!\n");
+
+	if(TYPEOF(pCoords)!=REALSXP)
+		error("[bam_count_segment_aligns] pCoords is no REAL!\n");
+
+	if(LENGTH(pCoords)!=3)
+		error("[bam_count_segment_aligns] pCoords must contain three values (refid, begin, end)!\n");
+
+	if(TYPEOF(pComplex)!=LGLSXP)
+		error("[bam_count_segment_aligns] pComplex must be logical!\n");
+
+	if(TYPEOF(pSegments) != INTSXP)
+		error("[bam_count_segment_aligns] pSegments must be INT!");
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Extract reader and index pointer
+	 */
+
+	samfile_t *reader=(samfile_t*)(R_ExternalPtrAddr(pReader));
+	bam_index_t *index=(bam_index_t*)(R_ExternalPtrAddr(pIndex));
+
+	if(reader==NULL)
+		error("[bam_count_segment_aligns] Reader must not be NULL pointer!\n");
+
+	if(index==NULL)
+		error("[bam_count_segment_aligns] Index must not be NULL pointer!\n");
+
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *  Get coordinates
+	 */
+	double *pi=REAL(pCoords);
+	int refid = (int) pi[0];
+	int begin = (int) pi[1];
+	int end = (int) pi[2];
+
+	if( (refid < 0) || (refid >= (reader->header->n_targets)))
+		error("[bam_count_segment_aligns] refid out of range!\n");
+
+	if( (begin < 0) || (begin >= end) || (end > (reader->header->target_len[refid])))
+		error("[bam_count_segment_aligns] Begin or end out of range!\n");
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Init count structure
+	 */
+
+	seg_align_counts * c = init_align_counts();
+
+	c->position = INTEGER(pSegments);
+	// n must be decremented here because of usage in 'seg_align_count'
+	int len = length(pSegments);
+	c->n = len - 1;
+
+	SEXP pCount;
+	pCount = PROTECT(allocVector(INTSXP, len));
+
+	c->count = INTEGER(pCount);
+	memset(c->count, 0, sizeof(int) * len);
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Fetch: Retrieve only complex aligns (nCigar>1) when pComplex is set:
+	 */
+	if(LOGICAL(pComplex)[0] == TRUE)
+		bam_fetch(reader->x.bam, index, refid, begin, end, (void*)c, count_fetch_complex_func);
+	else
+		bam_fetch(reader->x.bam, index, refid, begin, end, (void*)c, count_fetch_func);
+
+
+	free(c);
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Create rangeSegCount S4 object
+	 *
+	 */
+	SEXP pSeqCount;
+    PROTECT(pSeqCount = NEW_OBJECT(MAKE_CLASS("rangeSegCount")));
+    pSeqCount = SET_SLOT(pSeqCount, install("position"), pSegments);
+    pSeqCount = SET_SLOT(pSeqCount, install("count"), pCount);
+
+    /* seqname and LN	*/
+	bam_header_t* header = reader->header;
+	int nchar = strlen(header->target_name[refid]);
+	char * refname = R_alloc(nchar + 1, sizeof(char));
+	strcpy(refname, header->target_name[refid]);
+    pSeqCount = SET_SLOT(pSeqCount, install("refname"), mkString(refname));
+
+    // LN
+    SEXP pTargetLen = PROTECT(allocVector(INTSXP, 1));
+    INTEGER(pTargetLen)[0] =  header->target_len[refid];
+    pSeqCount = SET_SLOT(pSeqCount, install("LN"), pTargetLen);
+
+    // params
+    SEXP pParams;
+    pParams = PROTECT(allocVector(INTSXP, 3));
+    INTEGER(pParams)[0] = refid;
+    INTEGER(pParams)[1] = begin;
+    INTEGER(pParams)[2] = end;
+    pSeqCount = SET_SLOT(pSeqCount, install("coords"), pParams);
+
+    // complex
+    pSeqCount = SET_SLOT(pSeqCount, install("complex"), pComplex);
+
+    /* Return */
+	UNPROTECT(4);
+	return(pSeqCount);
+}
+
+SEXP bam_count_segment_melt_down(SEXP pSeg, SEXP pFactor)
+{
+	if(TYPEOF(pFactor)!= INTSXP)
+		error("[bam_count_segment_melt_down] pFactor must be INT!\n");
+
+	int factor = INTEGER(pFactor)[0];
+
+	SEXP pInPosition = GET_SLOT(pSeg, install("position"));
+	SEXP pInCount = GET_SLOT(pSeg, install("count"));
+
+	int *position = INTEGER(pInPosition);
+	int *count = INTEGER(pInCount);
+
+	int n = length(pInPosition);
+
+	int new_n;
+	if(n % factor)
+		new_n = ((int) (n / factor) + 1);
+	else
+		new_n = ((int) (n / factor));
+
+	SEXP pSegments = PROTECT(allocVector(INTSXP, new_n));
+	memset(INTEGER(pSegments), 0, sizeof(int) * new_n);
+	SEXP pCount = PROTECT(allocVector(INTSXP, new_n));
+	memset(INTEGER(pCount), 0, sizeof(int) * new_n);
+
+	int *new_position = INTEGER(pSegments);
+	int *new_count = INTEGER(pCount);
+	int i=0, j=0, k=0;
+
+	while(j < new_n)
+	{
+		new_position[k] = position[i];
+		while( (i < n) & (k < factor) )
+		{
+			new_count[j] += count[i];
+			++i;
+			++k;
+		}
+		// Re-initialize indices
+		++i;
+		++j;
+		k=0;
+	}
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Create rangeSegCount S4 object
+	 */
+	SEXP pSeqCount;
+    PROTECT(pSeqCount = NEW_OBJECT(MAKE_CLASS("rangeSegCount")));
+    pSeqCount = SET_SLOT(pSeqCount, install("position"), pSegments);
+    pSeqCount = SET_SLOT(pSeqCount, install("count"), pCount);
+
+    // Copy other slots
+    pSeqCount = SET_SLOT(pSeqCount, install("refname"), GET_SLOT(pSeg, install("refname")));
+    pSeqCount = SET_SLOT(pSeqCount, install("LN"), GET_SLOT(pSeg, install("LN")));
+    pSeqCount = SET_SLOT(pSeqCount, install("coords"), GET_SLOT(pSeg, install("coords")));
+    pSeqCount = SET_SLOT(pSeqCount, install("complex"), GET_SLOT(pSeg, install("complex")));
+
+    /* Return */
+	UNPROTECT(3);
+	return(pSeqCount);
+
+}
+
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  * Definitions for R_registerRoutines
@@ -4443,188 +4661,195 @@ SEXP count_text_lines(SEXP pInfile)
 void R_init_rbamtools(DllInfo *info)
 {
 	R_CallMethodDef cmd[] ={
-			{ "is_nil_externalptr", 				(DL_FUNC) &is_nil_externalptr,					1},
+		{ "is_nil_externalptr", 					(DL_FUNC) &is_nil_externalptr,					1},
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * bamHeader
-			 */
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * bamHeader
+		 */
 
-			{ "init_bam_header",					(DL_FUNC) &init_bam_header,						1},
-			{ "bam_header_get_header_text",			(DL_FUNC) &bam_header_get_header_text,			1},
+		{ "init_bam_header",						(DL_FUNC) &init_bam_header,						1},
+		{ "bam_header_get_header_text",				(DL_FUNC) &bam_header_get_header_text,			1},
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * BamWriter
-			 */
-			{ "bam_writer_open",					(DL_FUNC) &bam_writer_open,						2},
-			{ "bam_reader_open_writer",				(DL_FUNC) &bam_reader_open_writer,				2},
-			{ "bam_writer_save_align",				(DL_FUNC) &bam_writer_save_align,				3},
-			{ "bam_writer_close",					(DL_FUNC) &bam_writer_close,					1},
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * BamWriter
+		 */
+		{ "bam_writer_open",						(DL_FUNC) &bam_writer_open,						2},
+		{ "bam_reader_open_writer",					(DL_FUNC) &bam_reader_open_writer,				2},
+		{ "bam_writer_save_align",					(DL_FUNC) &bam_writer_save_align,				3},
+		{ "bam_writer_close",						(DL_FUNC) &bam_writer_close,					1},
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * BamReader
-			 */
-			{ "bam_reader_open",					(DL_FUNC) &bam_reader_open,						1},
-			{ "bam_reader_close",					(DL_FUNC) &bam_reader_close,					1},
-			{ "bam_reader_get_header_text",			(DL_FUNC) &bam_reader_get_header_text,			1},
-			{ "bam_reader_get_ref_count",   		(DL_FUNC) &bam_reader_get_ref_count,    		1},
-			{ "bam_reader_get_target_name",			(DL_FUNC) &bam_reader_get_target_name,  		2},
-			{ "bam_reader_get_ref_data",			(DL_FUNC) &bam_reader_get_ref_data,				1},
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * BamReader
+		 */
+		{ "bam_reader_open",						(DL_FUNC) &bam_reader_open,						1},
+		{ "bam_reader_close",						(DL_FUNC) &bam_reader_close,					1},
+		{ "bam_reader_get_header_text",				(DL_FUNC) &bam_reader_get_header_text,			1},
+		{ "bam_reader_get_ref_count",   			(DL_FUNC) &bam_reader_get_ref_count,    		1},
+		{ "bam_reader_get_target_name",				(DL_FUNC) &bam_reader_get_target_name,  		2},
+		{ "bam_reader_get_ref_data",				(DL_FUNC) &bam_reader_get_ref_data,				1},
 
-			{ "bam_reader_create_index",			(DL_FUNC) &bam_reader_create_index,				2},
-			{ "bam_reader_load_index",				(DL_FUNC) &bam_reader_load_index,				1},
-			{ "bam_reader_unload_index",			(DL_FUNC) &bam_reader_unload_index,				1},
-			{ "bam_reader_get_next_align",  		(DL_FUNC) &bam_reader_get_next_align,   		1},
-			{ "bam_reader_save_aligns",				(DL_FUNC) &bam_reader_save_aligns,  			2},
-			{ "bam_reader_sort_file",				(DL_FUNC) &bam_reader_sort_file,				4},
+		{ "bam_reader_create_index",				(DL_FUNC) &bam_reader_create_index,				2},
+		{ "bam_reader_load_index",					(DL_FUNC) &bam_reader_load_index,				1},
+		{ "bam_reader_unload_index",				(DL_FUNC) &bam_reader_unload_index,				1},
+		{ "bam_reader_get_next_align",  			(DL_FUNC) &bam_reader_get_next_align,   		1},
+		{ "bam_reader_save_aligns",					(DL_FUNC) &bam_reader_save_aligns,  			2},
+		{ "bam_reader_sort_file",					(DL_FUNC) &bam_reader_sort_file,				4},
 
-			{ "bam_reader_get_header",				(DL_FUNC) &bam_reader_get_header,				1},
-			{ "bam_reader_tell",					(DL_FUNC) &bam_reader_tell,						1},
-			{ "bam_reader_seek",					(DL_FUNC) &bam_reader_seek,						2},
-			{ "bam_reader_write_fastq",  			(DL_FUNC) &bam_reader_write_fastq,   			3},
-			{ "bam_reader_write_fastq_index",		(DL_FUNC) &bam_reader_write_fastq_index,  		4},
-			{ "bam_count",							(DL_FUNC) &bam_count,							3},
+		{ "bam_reader_get_header",					(DL_FUNC) &bam_reader_get_header,				1},
+		{ "bam_reader_tell",						(DL_FUNC) &bam_reader_tell,						1},
+		{ "bam_reader_seek",						(DL_FUNC) &bam_reader_seek,						2},
+		{ "bam_reader_write_fastq",  				(DL_FUNC) &bam_reader_write_fastq,   			3},
+		{ "bam_reader_write_fastq_index",			(DL_FUNC) &bam_reader_write_fastq_index,  		4},
+		{ "bam_count",								(DL_FUNC) &bam_count,							3},
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * gap_list
-			 */
-			{ "create_gap_list",					(DL_FUNC) &create_gap_list,						0},
-			{ "gap_list_fetch",						(DL_FUNC) &gap_list_fetch,						3},
-			{ "gap_list_get_df",					(DL_FUNC) &gap_list_get_df,						1},
-			{ "gap_list_get_size",  				(DL_FUNC) &gap_list_get_size,   				1},
-			{ "gap_list_get_nAligns",				(DL_FUNC) &gap_list_get_nAligns,  				1},
-			{ "gap_list_get_nAlignGaps",			(DL_FUNC) &gap_list_get_nAlignGaps,				1},
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * gap_list
+		 */
+		{ "create_gap_list",						(DL_FUNC) &create_gap_list,						0},
+		{ "gap_list_fetch",							(DL_FUNC) &gap_list_fetch,						3},
+		{ "gap_list_get_df",						(DL_FUNC) &gap_list_get_df,						1},
+		{ "gap_list_get_size",  					(DL_FUNC) &gap_list_get_size,   				1},
+		{ "gap_list_get_nAligns",					(DL_FUNC) &gap_list_get_nAligns,  				1},
+		{ "gap_list_get_nAlignGaps",				(DL_FUNC) &gap_list_get_nAlignGaps,				1},
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * gap_site_list
-			 */
-			{ "create_gap_site_list",				(DL_FUNC) &create_gap_site_list,				0},
-			{ "gap_site_list_fetch",				(DL_FUNC) &gap_site_list_fetch,					3},
-			{ "gap_site_list_get_df",				(DL_FUNC) &gap_site_list_get_df,				1},
-			{ "gap_site_list_get_ref_id",  			(DL_FUNC) &gap_site_list_get_ref_id,   			1},
-			{ "gap_site_list_get_size",				(DL_FUNC) &gap_site_list_get_size,  			1},
-			{ "gap_site_list_get_nAligns",			(DL_FUNC) &gap_site_list_get_nAligns,			1},
-			{ "gap_site_list_get_nAlignGaps",		(DL_FUNC) &gap_site_list_get_nAlignGaps,		1},
-			{ "gap_site_list_merge",				(DL_FUNC) &gap_site_list_merge,					3},
-			{ "gap_site_list_copy",					(DL_FUNC) &gap_site_list_copy,					1},
-			{ "bitmask_r_zip",  					(DL_FUNC) &bitmask_r_zip,   					2},
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * gap_site_list
+		 */
+		{ "create_gap_site_list",					(DL_FUNC) &create_gap_site_list,				0},
+		{ "gap_site_list_fetch",					(DL_FUNC) &gap_site_list_fetch,					3},
+		{ "gap_site_list_get_df",					(DL_FUNC) &gap_site_list_get_df,				1},
+		{ "gap_site_list_get_ref_id",  				(DL_FUNC) &gap_site_list_get_ref_id,   			1},
+		{ "gap_site_list_get_size",					(DL_FUNC) &gap_site_list_get_size,  			1},
+		{ "gap_site_list_get_nAligns",				(DL_FUNC) &gap_site_list_get_nAligns,			1},
+		{ "gap_site_list_get_nAlignGaps",			(DL_FUNC) &gap_site_list_get_nAlignGaps,		1},
+		{ "gap_site_list_merge",					(DL_FUNC) &gap_site_list_merge,					3},
+		{ "gap_site_list_copy",						(DL_FUNC) &gap_site_list_copy,					1},
+		{ "bitmask_r_zip",  						(DL_FUNC) &bitmask_r_zip,   					2},
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * gap_site_list_list
-			 */
-			{ "gap_site_ll_init",					(DL_FUNC) &gap_site_ll_init,					0},
-			{ "gap_site_ll_fetch",					(DL_FUNC) &gap_site_ll_fetch,					5},
-			{ "gap_site_ll_get_df",					(DL_FUNC) &gap_site_ll_get_df,					2},
-			{ "gap_site_ll_get_size",   			(DL_FUNC) &gap_site_ll_get_size,    			1},
-			{ "gap_site_ll_get_nAligns",			(DL_FUNC) &gap_site_ll_get_nAligns,  			1},
-			{ "gap_site_ll_get_nAlignGaps",			(DL_FUNC) &gap_site_ll_get_nAlignGaps,			1},
-			{ "gap_site_ll_add_curr_pp",			(DL_FUNC) &gap_site_ll_add_curr_pp,				3},
-			{ "gap_site_ll_add_merge_pp",			(DL_FUNC) &gap_site_ll_add_merge_pp,			4},
-			{ "gap_site_ll_reset_refid",			(DL_FUNC) &gap_site_ll_reset_refid,				1},
-			{ "gap_site_ll_get_summary_df",  		(DL_FUNC) &gap_site_ll_get_summary_df,   		1},
-			{ "gap_site_ll_set_curr_first",			(DL_FUNC) &gap_site_ll_set_curr_first,  		1},
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * gap_site_list_list
+		 */
+		{ "gap_site_ll_init",						(DL_FUNC) &gap_site_ll_init,					0},
+		{ "gap_site_ll_fetch",						(DL_FUNC) &gap_site_ll_fetch,					5},
+		{ "gap_site_ll_get_df",						(DL_FUNC) &gap_site_ll_get_df,					2},
+		{ "gap_site_ll_get_size",   				(DL_FUNC) &gap_site_ll_get_size,    			1},
+		{ "gap_site_ll_get_nAligns",				(DL_FUNC) &gap_site_ll_get_nAligns,  			1},
+		{ "gap_site_ll_get_nAlignGaps",				(DL_FUNC) &gap_site_ll_get_nAlignGaps,			1},
+		{ "gap_site_ll_add_curr_pp",				(DL_FUNC) &gap_site_ll_add_curr_pp,				3},
+		{ "gap_site_ll_add_merge_pp",				(DL_FUNC) &gap_site_ll_add_merge_pp,			4},
+		{ "gap_site_ll_reset_refid",				(DL_FUNC) &gap_site_ll_reset_refid,				1},
+		{ "gap_site_ll_get_summary_df",  			(DL_FUNC) &gap_site_ll_get_summary_df,   		1},
+		{ "gap_site_ll_set_curr_first",				(DL_FUNC) &gap_site_ll_set_curr_first,  		1},
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * bam_range
-			 */
-			{ "bam_range_init",						(DL_FUNC) &bam_range_init,						0},
-			{ "bam_range_fetch",					(DL_FUNC) &bam_range_fetch,						4},
-			{ "bam_range_get_size",					(DL_FUNC) &bam_range_get_size,					1},
-			{ "bam_range_get_coords",   			(DL_FUNC) &bam_range_get_coords,    			1},
-			{ "bam_range_get_params",				(DL_FUNC) &bam_range_get_params,  				1},
-			{ "bam_range_get_refname",				(DL_FUNC) &bam_range_get_refname,				1},
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * bam_range
+		 */
+		{ "bam_range_init",							(DL_FUNC) &bam_range_init,						0},
+		{ "bam_range_fetch",						(DL_FUNC) &bam_range_fetch,						4},
+		{ "bam_range_get_size",						(DL_FUNC) &bam_range_get_size,					1},
+		{ "bam_range_get_coords",   				(DL_FUNC) &bam_range_get_coords,    			1},
+		{ "bam_range_get_params",					(DL_FUNC) &bam_range_get_params,  				1},
+		{ "bam_range_get_refname",					(DL_FUNC) &bam_range_get_refname,				1},
 
-			{ "bam_range_get_align_range",			(DL_FUNC) &bam_range_get_align_range,			1},
-			{ "bam_range_get_next_align",			(DL_FUNC) &bam_range_get_next_align,			1},
-			{ "bam_range_get_prev_align",			(DL_FUNC) &bam_range_get_prev_align,			1},
-			{ "bam_range_step_next_align",			(DL_FUNC) &bam_range_step_next_align,  			1},
-			{ "bam_range_step_prev_align",			(DL_FUNC) &bam_reader_sort_file,				1},
+		{ "bam_range_get_align_range",				(DL_FUNC) &bam_range_get_align_range,			1},
+		{ "bam_range_get_next_align",				(DL_FUNC) &bam_range_get_next_align,			1},
+		{ "bam_range_get_prev_align",				(DL_FUNC) &bam_range_get_prev_align,			1},
+		{ "bam_range_step_next_align",				(DL_FUNC) &bam_range_step_next_align,  			1},
+		{ "bam_range_step_prev_align",				(DL_FUNC) &bam_reader_sort_file,				1},
+		{ "bam_range_get_align_df",					(DL_FUNC) &bam_range_get_align_df,				1},
+		{ "bam_range_write",						(DL_FUNC) &bam_range_write,						3},
+		{ "bam_range_wind_back",					(DL_FUNC) &bam_range_wind_back,					1},
+		{ "bam_range_push_back",  					(DL_FUNC) &bam_range_push_back,   				2},
+		{ "bam_range_pop_back",						(DL_FUNC) &bam_range_pop_back,  				1},
+		{ "bam_range_push_front",					(DL_FUNC) &bam_range_push_front,				2},
 
-			{ "bam_range_get_align_df",				(DL_FUNC) &bam_range_get_align_df,				1},
-			{ "bam_range_write",					(DL_FUNC) &bam_range_write,						3},
-			{ "bam_range_wind_back",				(DL_FUNC) &bam_range_wind_back,					1},
-			{ "bam_range_push_back",  				(DL_FUNC) &bam_range_push_back,   				2},
-			{ "bam_range_pop_back",					(DL_FUNC) &bam_range_pop_back,  				1},
-			{ "bam_range_push_front",				(DL_FUNC) &bam_range_push_front,				2},
+		{ "bam_range_pop_front",					(DL_FUNC) &bam_range_pop_front,					1},
+		{ "bam_range_write_current_align",			(DL_FUNC) &bam_range_write_current_align,		2},
+		{ "bam_range_insert_past_curr_align",		(DL_FUNC) &bam_range_insert_past_curr_align,	2},
+		{ "bam_range_insert_pre_curr_align",		(DL_FUNC) &bam_range_insert_pre_curr_align,    	2},
+		{ "bam_range_mv_curr_align",				(DL_FUNC) &bam_range_mv_curr_align,  			2},
+		{ "bam_range_write_fastq",					(DL_FUNC) &bam_range_write_fastq,				3},
 
-			{ "bam_range_pop_front",				(DL_FUNC) &bam_range_pop_front,					1},
-			{ "bam_range_write_current_align",		(DL_FUNC) &bam_range_write_current_align,		2},
-			{ "bam_range_insert_past_curr_align",	(DL_FUNC) &bam_range_insert_past_curr_align,	2},
-			{ "bam_range_insert_pre_curr_align",	(DL_FUNC) &bam_range_insert_pre_curr_align,    	2},
-			{ "bam_range_mv_curr_align",			(DL_FUNC) &bam_range_mv_curr_align,  			2},
-			{ "bam_range_write_fastq",				(DL_FUNC) &bam_range_write_fastq,				3},
+		{ "bam_range_write_fastq_index",			(DL_FUNC) &bam_range_write_fastq_index,			4},
+		{ "bam_range_get_seqlen",					(DL_FUNC) &bam_range_get_seqlen,				1},
+		{ "bam_range_get_qual_df",					(DL_FUNC) &bam_range_get_qual_df,				1},
+		{ "bam_range_get_align_depth",  			(DL_FUNC) &bam_range_get_align_depth,   		2},
+		{ "bam_range_count_nucs",               	(DL_FUNC) &bam_range_count_nucs,                1},
+		{ "bam_range_idx_copy",               		(DL_FUNC) &bam_range_idx_copy,                	2},
 
-			{ "bam_range_write_fastq_index",		(DL_FUNC) &bam_range_write_fastq_index,			4},
-			{ "bam_range_get_seqlen",				(DL_FUNC) &bam_range_get_seqlen,				1},
-			{ "bam_range_get_qual_df",				(DL_FUNC) &bam_range_get_qual_df,				1},
-			{ "bam_range_get_align_depth",  		(DL_FUNC) &bam_range_get_align_depth,   		2},
-			{ "bam_range_count_nucs",               (DL_FUNC) &bam_range_count_nucs,                1},
-			{ "bam_range_idx_copy",               	(DL_FUNC) &bam_range_idx_copy,                	2},
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * BamAlignment
+		 */
+		{ "bam_align_get_name",						(DL_FUNC) &bam_align_get_name,					1},
+		{ "bam_align_get_refid",					(DL_FUNC) &bam_align_get_refid,					1},
+		{ "bam_align_get_position",					(DL_FUNC) &bam_align_get_position,				1},
+		{ "bam_align_get_nCigar",   				(DL_FUNC) &bam_align_get_nCigar,    			1},
+		{ "bam_align_get_cigar_df",					(DL_FUNC) &bam_align_get_cigar_df,  			1},
+		{ "bam_align_get_mate_refid",				(DL_FUNC) &bam_align_get_mate_refid,			1},
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * BamAlignment
-			 */
-			{ "bam_align_get_name",					(DL_FUNC) &bam_align_get_name,					1},
-			{ "bam_align_get_refid",				(DL_FUNC) &bam_align_get_refid,					1},
-			{ "bam_align_get_position",				(DL_FUNC) &bam_align_get_position,				1},
-			{ "bam_align_get_nCigar",   			(DL_FUNC) &bam_align_get_nCigar,    			1},
-			{ "bam_align_get_cigar_df",				(DL_FUNC) &bam_align_get_cigar_df,  			1},
-			{ "bam_align_get_mate_refid",			(DL_FUNC) &bam_align_get_mate_refid,			1},
-
-			{ "bam_align_get_mate_position",		(DL_FUNC) &bam_align_get_mate_position,			1},
-			{ "bam_align_get_insert_size",			(DL_FUNC) &bam_align_get_insert_size,			1},
-			{ "bam_align_get_map_quality",			(DL_FUNC) &bam_align_get_map_quality,			1},
-			{ "bam_align_get_segment_sequence",  	(DL_FUNC) &bam_align_get_segment_sequence,   	1},
-			{ "bam_align_get_qualities",			(DL_FUNC) &bam_align_get_qualities,  			1},
-			{ "bam_align_get_qual_values",			(DL_FUNC) &bam_align_get_qual_values,			1},
-			{ "bam_align_count_nucs",				(DL_FUNC) &bam_align_count_nucs,                1},
+		{ "bam_align_get_mate_position",			(DL_FUNC) &bam_align_get_mate_position,			1},
+		{ "bam_align_get_insert_size",				(DL_FUNC) &bam_align_get_insert_size,			1},
+		{ "bam_align_get_map_quality",				(DL_FUNC) &bam_align_get_map_quality,			1},
+		{ "bam_align_get_segment_sequence",  		(DL_FUNC) &bam_align_get_segment_sequence,   	1},
+		{ "bam_align_get_qualities",				(DL_FUNC) &bam_align_get_qualities,  			1},
+		{ "bam_align_get_qual_values",				(DL_FUNC) &bam_align_get_qual_values,			1},
+		{ "bam_align_count_nucs",					(DL_FUNC) &bam_align_count_nucs,                1},
 
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * alignment flags
-			 */
-			{ "bam_align_is_paired",				(DL_FUNC) &bam_align_is_paired,					1},
-			{ "bam_align_mapped_in_proper_pair",	(DL_FUNC) &bam_align_mapped_in_proper_pair,		1},
-			{ "bam_align_is_unmapped",				(DL_FUNC) &bam_align_is_unmapped,				1},
-			{ "bam_align_mate_is_unmapped",			(DL_FUNC) &bam_align_mate_is_unmapped,			1},
-			{ "bam_align_strand_reverse",  			(DL_FUNC) &bam_align_strand_reverse,   			1},
-			{ "bam_align_mate_strand_reverse",		(DL_FUNC) &bam_align_mate_strand_reverse,  		1},
-			{ "bam_align_is_first_in_pair",			(DL_FUNC) &bam_align_is_first_in_pair,			1},
-			{ "bam_align_is_second_in_pair",		(DL_FUNC) &bam_align_is_second_in_pair,			1},
-			{ "bam_align_is_secondary_align",		(DL_FUNC) &bam_align_is_secondary_align,		1},
-			{ "bam_align_fail_qc",  				(DL_FUNC) &bam_align_fail_qc,   				1},
-			{ "bam_align_is_pcr_or_optical_dup",	(DL_FUNC) &bam_align_is_pcr_or_optical_dup,  	1},
-			{ "bam_align_get_flag",					(DL_FUNC) &bam_align_get_flag,					1},
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * alignment flags
+		 */
+		{ "bam_align_is_paired",					(DL_FUNC) &bam_align_is_paired,					1},
+		{ "bam_align_mapped_in_proper_pair",		(DL_FUNC) &bam_align_mapped_in_proper_pair,		1},
+		{ "bam_align_is_unmapped",					(DL_FUNC) &bam_align_is_unmapped,				1},
+		{ "bam_align_mate_is_unmapped",				(DL_FUNC) &bam_align_mate_is_unmapped,			1},
+		{ "bam_align_strand_reverse",  				(DL_FUNC) &bam_align_strand_reverse,   			1},
+		{ "bam_align_mate_strand_reverse",			(DL_FUNC) &bam_align_mate_strand_reverse,  		1},
+		{ "bam_align_is_first_in_pair",				(DL_FUNC) &bam_align_is_first_in_pair,			1},
+		{ "bam_align_is_second_in_pair",			(DL_FUNC) &bam_align_is_second_in_pair,			1},
+		{ "bam_align_is_secondary_align",			(DL_FUNC) &bam_align_is_secondary_align,		1},
+		{ "bam_align_fail_qc",  					(DL_FUNC) &bam_align_fail_qc,   				1},
+		{ "bam_align_is_pcr_or_optical_dup",		(DL_FUNC) &bam_align_is_pcr_or_optical_dup,  	1},
+		{ "bam_align_is_supplementary_align",		(DL_FUNC) &bam_align_is_supplementary_align,	1},
+		{ "bam_align_get_flag",						(DL_FUNC) &bam_align_get_flag,					1},
 
-			{ "bam_align_set_refid",				(DL_FUNC) &bam_align_set_refid,					2},
-			{ "bam_align_set_is_paired",			(DL_FUNC) &bam_align_set_is_paired,				2},
-			{ "bam_align_set_mapped_in_proper_pair",(DL_FUNC) &bam_align_set_mapped_in_proper_pair,	2},
-			{ "bam_align_set_is_unmapped",   		(DL_FUNC) &bam_align_set_is_unmapped,    		2},
-			{ "bam_align_set_mate_is_unmapped",		(DL_FUNC) &bam_align_set_mate_is_unmapped,  	2},
-			{ "bam_align_set_strand_reverse",		(DL_FUNC) &bam_align_set_strand_reverse,		2},
-			{ "bam_align_set_mate_strand_reverse",	(DL_FUNC) &bam_align_set_mate_strand_reverse,	2},
-			{ "bam_align_set_is_first_in_pair",		(DL_FUNC) &bam_align_set_is_first_in_pair,		2},
-			{ "bam_align_set_is_second_in_pair",	(DL_FUNC) &bam_align_set_is_second_in_pair,		2},
-			{ "bam_align_set_is_secondary_align",  	(DL_FUNC) &bam_align_set_is_secondary_align,   	2},
-			{ "bam_align_set_fail_qc",				(DL_FUNC) &bam_align_set_fail_qc,				2},
-			{ "bam_align_set_is_pcr_or_optical_dup",(DL_FUNC) &bam_align_set_is_pcr_or_optical_dup,	2},
-			{ "bam_align_set_flag",					(DL_FUNC) &bam_align_set_flag,					2},
-			{ "bam_align_create",  					(DL_FUNC) &bam_align_create,   					2},
+		{ "bam_align_set_refid",					(DL_FUNC) &bam_align_set_refid,					2},
+		{ "bam_align_set_is_paired",				(DL_FUNC) &bam_align_set_is_paired,				2},
+		{ "bam_align_set_mapped_in_proper_pair",	(DL_FUNC) &bam_align_set_mapped_in_proper_pair,	2},
+		{ "bam_align_set_is_unmapped",   			(DL_FUNC) &bam_align_set_is_unmapped,    		2},
+		{ "bam_align_set_mate_is_unmapped",			(DL_FUNC) &bam_align_set_mate_is_unmapped,  	2},
+		{ "bam_align_set_strand_reverse",			(DL_FUNC) &bam_align_set_strand_reverse,		2},
+		{ "bam_align_set_mate_strand_reverse",		(DL_FUNC) &bam_align_set_mate_strand_reverse,	2},
+		{ "bam_align_set_is_first_in_pair",			(DL_FUNC) &bam_align_set_is_first_in_pair,		2},
+		{ "bam_align_set_is_second_in_pair",		(DL_FUNC) &bam_align_set_is_second_in_pair,		2},
+		{ "bam_align_set_is_secondary_align",  		(DL_FUNC) &bam_align_set_is_secondary_align,   	2},
+		{ "bam_align_set_fail_qc",					(DL_FUNC) &bam_align_set_fail_qc,				2},
+		{ "bam_align_set_is_pcr_or_optical_dup",	(DL_FUNC) &bam_align_set_is_pcr_or_optical_dup,	2},
+		{ "bam_align_set_is_supplementary_align",	(DL_FUNC) &bam_align_set_is_supplementary_align,2},
+		{ "bam_align_set_flag",						(DL_FUNC) &bam_align_set_flag,					2},
+		{ "bam_align_create",  						(DL_FUNC) &bam_align_create,   					2},
 
-			/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-			 * Miscellaneous functions
-			 */
-			{ "copy_fastq_records",					(DL_FUNC) &copy_fastq_records,					4},
-			{ "count_fastq",						(DL_FUNC) &count_fastq,							2},
-			{ "get_col_quantiles",					(DL_FUNC) &get_col_quantiles,					2},
-			{ "count_text_lines",					(DL_FUNC) &count_text_lines,					1},
 
-			{NULL, NULL, 0}
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * count segments
+		 */
+		{ "bam_count_segment_aligns",				(DL_FUNC) & bam_count_segment_aligns,			5},
+		{ "bam_count_segment_melt_down",			(DL_FUNC) &bam_count_segment_melt_down,			2},
+
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 * Miscellaneous functions
+		 */
+		{ "copy_fastq_records",						(DL_FUNC) &copy_fastq_records,					4},
+		{ "count_fastq",							(DL_FUNC) &count_fastq,							2},
+		{ "get_col_quantiles",						(DL_FUNC) &get_col_quantiles,					2},
+		{ "count_text_lines",						(DL_FUNC) &count_text_lines,					1},
+
+		{NULL, NULL, 0}
 	};
 	/*
 	 * 			{ "",	(DL_FUNC) &,	}
 	 */
 	R_registerRoutines(info, NULL, cmd, NULL, NULL);
 }
-
 
 #endif
